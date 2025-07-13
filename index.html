@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreams and Poems ✨</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* --- Base and Typography --- */
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: sans-serif; /* Use default sans-serif font */
+            background-color: #000;
+            color: #fff;
+        }
+
+        /* --- Video Background --- */
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+            cursor: pointer; /* Add cursor to indicate it's clickable */
+        }
+        
+        #video-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            transition: opacity 0.7s ease-in-out;
+            pointer-events: none; /* Clicks go to the container */
+        }
+
+        /* --- Overlay and UI Elements --- */
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Pass clicks through overlay */
+        }
+
+        /* --- Controls and About Link --- */
+        .controls, .about-link {
+            position: fixed;
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 30px;
+            pointer-events: auto;
+            opacity: 0; /* Invisible by default */
+            transition: opacity 0.5s ease;
+        }
+
+        /* Make controls fully visible on activity/hover */
+        .controls:hover, .ui-visible .controls {
+            opacity: 1;
+        }
+
+        /* Make About link partially visible on activity, fully on hover */
+        .ui-visible .about-link {
+            opacity: 0.2; /* 20% opacity when UI is active */
+        }
+        .about-link:hover {
+            opacity: 1; /* Fully visible on direct hover */
+        }
+
+        .controls {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+        }
+        
+        .about-link {
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: white;
+            background: transparent; /* No background */
+        }
+
+        .controls button, .toggle-switch {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .controls button:hover, .toggle-switch:hover {
+            transform: scale(1.1);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+        }
+        .toggle-switch input { display: none; }
+        .toggle-icon {
+            width: 40px; height: 20px; background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px; position: relative; transition: background-color 0.3s ease;
+        }
+        .toggle-icon::after {
+            content: ''; position: absolute; width: 16px; height: 16px;
+            border-radius: 50%; background-color: white; top: 2px; left: 2px;
+            transition: transform 0.3s ease;
+        }
+        .toggle-switch input:checked + .toggle-icon { background-color: #8B5CF6; }
+        .toggle-switch input:checked + .toggle-icon::after { transform: translateX(20px); }
+
+        /* --- Loading / Status Indicator --- */
+        #status-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="video-container">
+        <video id="video-bg" playsinline muted loop></video>
+    </div>
+    
+    <div id="ui-overlay" class="ui-overlay">
+        <div class="controls">
+            <button id="toggle-sound-btn" title="Toggle Sound"></button>
+            <button id="fullscreen-btn" title="Toggle Fullscreen"></button>
+            <label class="toggle-switch" title="Auto-play">
+                <input type="checkbox" id="auto-play-checkbox">
+                <span class="toggle-icon"></span>
+            </label>
+        </div>
+
+        <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" class="about-link">About</a>
+    </div>
+
+    <div id="status-indicator">Loading...</div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- CONFIGURATION ---
+        const CONFIG = {
+            // IMPORTANT: Manually list the direct URLs to your video files here.
+            videoUrls: {
+                desktop: [
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00002-audio.mp4",
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00003-audio.mp4",
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424234900_00001-audio.mp4",
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00002-audio.mp4"
+                ],
+                mobile: [
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00017-audio.mp4",
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00020-audio.mp4",
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00021-audio.mp4",
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00024-audio.mp4"
+                ]
+            }
+        };
+
+        // --- DOM ELEMENTS ---
+        const videoContainer = document.getElementById('video-container');
+        const videoBg = document.getElementById('video-bg');
+        const uiOverlay = document.getElementById('ui-overlay');
+        const statusIndicator = document.getElementById('status-indicator');
+        const toggleSoundBtn = document.getElementById('toggle-sound-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const autoPlayCheckbox = document.getElementById('auto-play-checkbox');
+
+        // --- STATE ---
+        let videoUrls = [];
+        let currentIndex = -1;
+        let isDesktop = true;
+        let preloadedVideo = null;
+        let uiVisibilityTimeout;
+
+        // --- ICONS ---
+        const icons = {
+            soundOn: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`,
+            soundOff: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`,
+            fullscreenEnter: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>`,
+            fullscreenExit: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3v4m0 0h4m-4 0l7-7M3 9v4m0 0h4m-4 0l7-7m11 5v4m0 0h-4m4 0l-7 7M3 15v-4m0 0h4m-4 0l7 7" /></svg>`
+        };
+
+        /**
+         * Shuffles an array in place.
+         * @param {Array} array The array to shuffle.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * Displays a status message to the user.
+         * @param {string} message - The message to display.
+         * @param {number} duration - How long to show the message in ms.
+         */
+        function showStatus(message, duration = 2000) {
+            statusIndicator.textContent = message;
+            statusIndicator.style.opacity = '1';
+            setTimeout(() => {
+                statusIndicator.style.opacity = '0';
+            }, duration);
+        }
+
+        /**
+         * Plays a video at a given index.
+         * @param {number} index - The index of the video to play.
+         */
+        function playContent(index) {
+            if (videoUrls.length === 0) return;
+
+            currentIndex = index % videoUrls.length;
+            const videoUrl = videoUrls[currentIndex];
+
+            // Fade out current video
+            videoBg.style.opacity = 0;
+
+            setTimeout(() => {
+                videoBg.src = videoUrl;
+                videoBg.play().catch(e => {
+                    console.error("Playback error on .play():", e);
+                });
+                
+                // Fade in new video
+                videoBg.style.opacity = 1;
+
+                // Preload next video if on desktop
+                if (isDesktop) {
+                    preloadNext();
+                }
+            }, 700); // Match CSS transition duration
+        }
+
+        /**
+         * Changes to the next video.
+         */
+        function nextContent() {
+            playContent(currentIndex + 1);
+        }
+
+        /**
+         * Preloads the next video in the sequence to ensure smooth transitions on desktop.
+         */
+        function preloadNext() {
+            if (videoUrls.length === 0) return;
+            const nextIndex = (currentIndex + 1) % videoUrls.length;
+            const nextUrl = videoUrls[nextIndex];
+            
+            if (!preloadedVideo) {
+                preloadedVideo = document.createElement('video');
+                preloadedVideo.style.display = 'none';
+                document.body.appendChild(preloadedVideo);
+            }
+            preloadedVideo.src = nextUrl;
+            preloadedVideo.load();
+        }
+
+        /**
+         * Updates the UI icons based on the current state.
+         */
+        function updateUI() {
+            toggleSoundBtn.innerHTML = videoBg.muted ? icons.soundOff : icons.soundOn;
+            fullscreenBtn.innerHTML = document.fullscreenElement ? icons.fullscreenExit : icons.fullscreenEnter;
+        }
+
+        /**
+         * Handles UI visibility based on mouse activity.
+         */
+        function handleUIVisibility() {
+            uiOverlay.classList.add('ui-visible');
+            clearTimeout(uiVisibilityTimeout);
+            uiVisibilityTimeout = setTimeout(() => {
+                uiOverlay.classList.remove('ui-visible');
+            }, 3000);
+        }
+
+        /**
+         * Main initialization function.
+         */
+        function init() {
+            showStatus("Initializing...");
+            updateUI();
+            
+            // 1. Detect device orientation and set video URLs
+            isDesktop = window.innerWidth > window.innerHeight;
+            videoUrls = isDesktop ? CONFIG.videoUrls.desktop : CONFIG.videoUrls.mobile;
+            
+            if (!videoUrls || videoUrls.length === 0) {
+                showStatus("Please add your video URLs in the CONFIG section.", 10000);
+                return;
+            }
+
+            // 2. Shuffle content for variety
+            shuffleArray(videoUrls);
+
+            // 3. Setup event listeners
+            videoBg.addEventListener('ended', () => {
+                if (autoPlayCheckbox.checked) {
+                    nextContent();
+                }
+            });
+
+            videoBg.addEventListener('error', (e) => {
+                console.error("Error loading video:", videoBg.currentSrc, e);
+                if (videoBg.currentSrc && videoBg.currentSrc !== window.location.href) {
+                     showStatus(`Failed to load video. Trying next...`, 3000);
+                }
+                setTimeout(nextContent, 1000);
+            });
+            
+            toggleSoundBtn.addEventListener('click', () => {
+                videoBg.muted = !videoBg.muted;
+                updateUI();
+            });
+
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+
+            document.addEventListener('fullscreenchange', updateUI);
+            
+            // Click anywhere on the video container to change the video
+            videoContainer.addEventListener('click', nextContent);
+            
+            // UI visibility
+            window.addEventListener('mousemove', handleUIVisibility);
+
+            // 4. Start playback
+            showStatus("Loading...", 1500);
+            playContent(0);
+        }
+
+        init();
+    });
+    </script>
+</body>
+</html>
