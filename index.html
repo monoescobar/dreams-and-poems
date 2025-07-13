@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dreams and Poems ✨</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +11,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            font-family: sans-serif; /* Use default sans-serif font */
+            font-family: sans-serif;
             background-color: #000;
             color: #fff;
         }
@@ -25,7 +25,7 @@
             height: 100%;
             z-index: 1;
             overflow: hidden;
-            cursor: pointer; /* Add cursor to indicate it's clickable */
+            cursor: pointer;
         }
         
         .video-player {
@@ -38,11 +38,11 @@
             height: auto;
             transform: translate(-50%, -50%);
             object-fit: cover;
-            transition: opacity 1.5s ease-in-out; /* Slower transition for cross-fade */
-            pointer-events: none; /* Clicks go to the container */
+            transition: opacity 1.5s ease-in-out;
+            pointer-events: none;
         }
 
-        /* --- Overlay and UI Elements --- */
+        /* --- UI Overlay --- */
         .ui-overlay {
             position: fixed;
             top: 0;
@@ -50,52 +50,57 @@
             width: 100%;
             height: 100%;
             z-index: 10;
-            pointer-events: none; /* Pass clicks through overlay */
+            pointer-events: none;
         }
 
-        /* --- Controls and About Link --- */
-        .controls, .about-link {
+        /* --- Desktop Controls --- */
+        .desktop-controls {
             position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .ui-visible .desktop-controls {
+            opacity: 1;
+        }
+        
+        .control-bar {
             display: flex;
             gap: 12px;
             padding: 10px;
             border-radius: 30px;
-            pointer-events: auto;
-            opacity: 0; /* Invisible by default */
-            transition: opacity 0.5s ease;
-        }
-
-        /* Make controls fully visible on activity/hover */
-        .controls:hover, .ui-visible .controls {
-            opacity: 1;
-        }
-
-        /* Make About link partially visible on activity, fully on hover */
-        .ui-visible .about-link {
-            opacity: 0.2; /* 20% opacity when UI is active */
-        }
-        .about-link:hover {
-            opacity: 1; /* Fully visible on direct hover */
-        }
-
-        .controls {
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(8px);
         }
-        
+
         .about-link {
+            position: fixed;
             bottom: 20px;
             right: 20px;
+            padding: 10px;
+            border-radius: 30px;
             font-size: 0.9rem;
             text-decoration: none;
             color: white;
-            background: transparent; /* No background */
+            background: transparent;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
+        
+        .ui-visible .about-link { opacity: 0.2; }
+        .about-link:hover { opacity: 1; }
 
-        .controls button, .toggle-switch {
+        .control-bar button, .toggle-switch {
             background: transparent;
             border: none;
             color: white;
@@ -104,89 +109,98 @@
             border-radius: 50%;
             transition: transform 0.2s ease, background-color 0.2s ease;
         }
-
-        .controls button:hover, .toggle-switch:hover {
+        .control-bar button:hover, .toggle-switch:hover {
             transform: scale(1.1);
             background-color: rgba(255, 255, 255, 0.1);
         }
-
-        .toggle-switch {
-            display: flex;
-            align-items: center;
-        }
+        .toggle-switch { display: flex; align-items: center; }
         .toggle-switch input { display: none; }
-        .toggle-icon {
-            width: 40px; height: 20px; background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 10px; position: relative; transition: background-color 0.3s ease;
-        }
-        .toggle-icon::after {
-            content: ''; position: absolute; width: 16px; height: 16px;
-            border-radius: 50%; background-color: white; top: 2px; left: 2px;
-            transition: transform 0.3s ease;
-        }
+        .toggle-icon { width: 40px; height: 20px; background-color: rgba(255, 255, 255, 0.2); border-radius: 10px; position: relative; transition: background-color 0.3s ease; }
+        .toggle-icon::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.3s ease; }
         .toggle-switch input:checked + .toggle-icon { background-color: #8B5CF6; }
         .toggle-switch input:checked + .toggle-icon::after { transform: translateX(20px); }
 
-        /* --- Loading / Status Indicator --- */
-        #status-indicator {
+        /* --- Progress Bar (Desktop) --- */
+        #progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background-color: rgba(255, 255, 255, 0.5);
+            transition: width 0.1s linear;
+        }
+
+        /* --- Mobile Gesture Feedback --- */
+        #gesture-feedback {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 100;
-            font-size: 1.2rem;
-            padding: 10px 20px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease-out;
             pointer-events: none;
+        }
+        #gesture-feedback.visible { opacity: 1; }
+        #gesture-icon { width: 64px; height: 64px; }
+        #gesture-text { font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px black; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .desktop-controls, #fullscreen-btn, .about-link {
+                display: none; /* Hide desktop elements on mobile */
+            }
+        }
+        @media (min-width: 769px) {
+            #gesture-feedback {
+                display: none; /* Hide mobile elements on desktop */
+            }
         }
     </style>
 </head>
 <body>
 
     <div id="video-container">
-        <!-- Two video elements for seamless cross-fading -->
         <video id="video-a" class="video-player" playsinline muted></video>
         <video id="video-b" class="video-player" playsinline muted></video>
+        <div id="progress-bar"></div>
     </div>
     
     <div id="ui-overlay" class="ui-overlay">
-        <div class="controls">
-            <button id="toggle-sound-btn" title="Toggle Sound"></button>
-            <button id="fullscreen-btn" title="Toggle Fullscreen"></button>
-            <label class="toggle-switch" title="Auto-play">
-                <input type="checkbox" id="auto-play-checkbox">
-                <span class="toggle-icon"></span>
-            </label>
+        <div class="desktop-controls">
+            <div class="control-bar">
+                <button id="toggle-sound-btn" title="Mute (M)"></button>
+                <button id="fullscreen-btn" title="Fullscreen (F)"></button>
+                <label class="toggle-switch" title="Autoplay (A)">
+                    <input type="checkbox" id="auto-play-checkbox">
+                    <span class="toggle-icon"></span>
+                </label>
+            </div>
         </div>
-
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" class="about-link">About</a>
+        <div id="gesture-feedback">
+            <div id="gesture-icon"></div>
+            <div id="gesture-text"></div>
+        </div>
     </div>
 
-    <div id="status-indicator">Loading...</div>
+    <div id="status-indicator"></div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-
-        // --- CONFIGURATION ---
         const CONFIG = {
-            PRELOAD_BUFFER_SIZE: 3, // How many videos to preload ahead of time
+            PRELOAD_BUFFER_SIZE: 3,
             videoUrls: {
-                desktop: [
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422005005_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422142021_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422142021_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422154801_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422154801_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422170013_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422170013_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422175646_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422175646_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422215627_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422232437_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423080001_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084506_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084506_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084507_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084507_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423122458_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423130957_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423142042_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423150148_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423160042_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165615_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423222421_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423233615_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424001514_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424094939_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424102703_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424132231_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424135710_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424143311_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151724_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151724_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424234900_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00004-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033512_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033512_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033513_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033513_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073813_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073814_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073814_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073815_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102507_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102507_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102508_00001-audio.mp4"
-                ],
-                mobile: [
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00017-audio.mp4",
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00020-audio.mp4",
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00021-audio.mp4",
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00024-audio.mp4"
-                ]
+                desktop: ["https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422005005_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00001-audio.mp4"],
+                mobile: ["https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00017-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00020-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00021-audio.mp4"]
             }
         };
 
-        // --- DOM ELEMENTS ---
         const videoContainer = document.getElementById('video-container');
         const videoA = document.getElementById('video-a');
         const videoB = document.getElementById('video-b');
@@ -195,8 +209,11 @@
         const toggleSoundBtn = document.getElementById('toggle-sound-btn');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const autoPlayCheckbox = document.getElementById('auto-play-checkbox');
+        const progressBar = document.getElementById('progress-bar');
+        const gestureFeedback = document.getElementById('gesture-feedback');
+        const gestureIcon = document.getElementById('gesture-icon');
+        const gestureText = document.getElementById('gesture-text');
 
-        // --- STATE ---
         let videoUrls = [];
         let currentIndex = -1;
         let isDesktop = true;
@@ -205,72 +222,41 @@
         let inactiveVideoElement = videoB;
         let isTransitioning = false;
         const preloadedVideos = new Map();
+        let mobileControlMode = 'sound'; // 'sound' or 'autoplay'
+        let touchStartX = 0, touchStartY = 0;
 
-        // --- ICONS ---
-        const icons = {
+        const ICONS = {
             soundOn: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`,
             soundOff: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`,
             fullscreenEnter: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>`,
-            fullscreenExit: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3v4m0 0h4m-4 0l7-7M3 9v4m0 0h4m-4 0l7-7m11 5v4m0 0h-4m4 0l-7 7M3 15v-4m0 0h4m-4 0l7 7" /></svg>`
+            fullscreenExit: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3v4m0 0h4m-4 0l7-7M3 9v4m0 0h4m-4 0l7-7m11 5v4m0 0h-4m4 0l-7 7M3 15v-4m0 0h4m-4 0l7 7" /></svg>`,
+            autoplay: `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 20h5v-5M20 4h-5v5" /></svg>`
         };
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
+        function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[array[i], array[j]] = [array[j], array[i]]; } }
+        function showStatus(message, duration = 2000) { statusIndicator.textContent = message; statusIndicator.style.opacity = '1'; setTimeout(() => { statusIndicator.style.opacity = '0'; }, duration); }
 
-        function showStatus(message, duration = 2000) {
-            statusIndicator.textContent = message;
-            statusIndicator.style.opacity = '1';
-            setTimeout(() => {
-                statusIndicator.style.opacity = '0';
-            }, duration);
-        }
-
-        function playNextContent() {
-            if (isTransitioning) return;
-            currentIndex++;
-            playContent(currentIndex);
-        }
+        function playNextContent() { if (isTransitioning) return; currentIndex++; playContent(currentIndex); }
 
         function playContent(index) {
             if (videoUrls.length === 0 || isTransitioning) return;
             isTransitioning = true;
-            
             currentIndex = index % videoUrls.length;
             const videoUrl = videoUrls[currentIndex];
-
-            if (preloadedVideos.has(videoUrl)) {
-                const preloadedVideo = preloadedVideos.get(videoUrl);
-                preloadedVideos.delete(videoUrl);
-                
-                inactiveVideoElement.src = preloadedVideo.src;
-                inactiveVideoElement.currentTime = 0;
-                document.body.removeChild(preloadedVideo);
-                
-                inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
-                inactiveVideoElement.load();
-            } else {
-                inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
-                inactiveVideoElement.src = videoUrl;
-                inactiveVideoElement.load();
-            }
+            inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
+            inactiveVideoElement.src = videoUrl;
+            inactiveVideoElement.load();
         }
 
         function crossFade() {
             inactiveVideoElement.play().catch(e => console.error("Playback error:", e));
-            
             inactiveVideoElement.style.opacity = 1;
             activeVideoElement.style.opacity = 0;
-
             setTimeout(() => {
                 const temp = activeVideoElement;
                 activeVideoElement = inactiveVideoElement;
                 inactiveVideoElement = temp;
                 inactiveVideoElement.pause();
-                
                 setupEventListeners(activeVideoElement);
                 updatePreloadQueue();
                 isTransitioning = false;
@@ -279,18 +265,8 @@
 
         function startPreloading(url) {
             const video = document.createElement('video');
-            video.style.display = 'none';
-            video.src = url;
-            video.muted = true;
-            video.playsInline = true;
-            video.preload = 'auto';
-
-            video.addEventListener('canplaythrough', () => {
-                if (!preloadedVideos.has(url)) {
-                    preloadedVideos.set(url, video);
-                }
-            }, { once: true });
-            
+            video.style.display = 'none'; video.src = url; video.muted = true; video.playsInline = true; video.preload = 'auto';
+            video.addEventListener('canplaythrough', () => { if (!preloadedVideos.has(url)) { preloadedVideos.set(url, video); } }, { once: true });
             document.body.appendChild(video);
             video.load();
         }
@@ -300,20 +276,12 @@
             for (const [url, video] of preloadedVideos.entries()) {
                 const videoIndex = videoUrls.indexOf(url);
                 const distance = (videoIndex - currentIndex + videoUrls.length) % videoUrls.length;
-                if (distance > CONFIG.PRELOAD_BUFFER_SIZE) {
-                    preloadedVideos.delete(url);
-                    if (video.parentNode) {
-                        video.parentNode.removeChild(video);
-                    }
-                }
+                if (distance > CONFIG.PRELOAD_BUFFER_SIZE) { preloadedVideos.delete(url); if (video.parentNode) { video.parentNode.removeChild(video); } }
             }
-
             for (let i = 1; i <= CONFIG.PRELOAD_BUFFER_SIZE; i++) {
                 const nextIndex = (currentIndex + i) % videoUrls.length;
                 const nextUrl = videoUrls[nextIndex];
-                if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) {
-                    startPreloading(nextUrl);
-                }
+                if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) { startPreloading(nextUrl); }
             }
         }
         
@@ -321,107 +289,121 @@
             videoElement.removeEventListener('ended', handleVideoEnd);
             videoElement.removeEventListener('error', handleVideoError);
             videoElement.removeEventListener('timeupdate', handleTimeUpdate);
-
             videoElement.addEventListener('ended', handleVideoEnd);
             videoElement.addEventListener('error', handleVideoError);
             videoElement.addEventListener('timeupdate', handleTimeUpdate);
         }
 
-        function handleVideoEnd() {
-            if (autoPlayCheckbox.checked && !isTransitioning) {
-                playNextContent();
-            }
-        }
+        function handleVideoEnd() { if (autoPlayCheckbox.checked && !isTransitioning) { playNextContent(); } }
         
         function handleTimeUpdate() {
-            if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
-
-            const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
-            if (timeRemaining < 3.2) {
-                playNextContent();
+            if (activeVideoElement.duration) {
+                progressBar.style.width = `${(activeVideoElement.currentTime / activeVideoElement.duration) * 100}%`;
             }
+            if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
+            const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
+            if (timeRemaining < 3.2) { playNextContent(); }
         }
 
-        function handleVideoError(e) {
-            console.error("Error loading video:", activeVideoElement.currentSrc, e);
-            showStatus(`Failed to load video. Trying next...`, 3000);
-            setTimeout(playNextContent, 1000);
-        }
+        function handleVideoError(e) { console.error("Error loading video:", activeVideoElement.currentSrc, e); showStatus(`Failed to load video. Trying next...`, 3000); setTimeout(playNextContent, 1000); }
 
         function updateUI() {
             const isMuted = videoA.muted || videoB.muted;
-            toggleSoundBtn.innerHTML = isMuted ? icons.soundOff : icons.soundOn;
-            fullscreenBtn.innerHTML = document.fullscreenElement ? icons.fullscreenExit : icons.fullscreenEnter;
+            toggleSoundBtn.innerHTML = isMuted ? ICONS.soundOff : ICONS.soundOn;
+            fullscreenBtn.innerHTML = document.fullscreenElement ? ICONS.fullscreenExit : ICONS.fullscreenEnter;
         }
 
-        function handleUIVisibility() {
-            uiOverlay.classList.add('ui-visible');
-            clearTimeout(uiVisibilityTimeout);
-            uiVisibilityTimeout = setTimeout(() => {
-                uiOverlay.classList.remove('ui-visible');
-            }, 3000);
-        }
+        function handleUIVisibility() { uiOverlay.classList.add('ui-visible'); clearTimeout(uiVisibilityTimeout); uiVisibilityTimeout = setTimeout(() => { uiOverlay.classList.remove('ui-visible'); }, 3000); }
         
-        function setLooping() {
-            const shouldLoop = !autoPlayCheckbox.checked;
-            videoA.loop = shouldLoop;
-            videoB.loop = shouldLoop;
+        function setLooping() { const shouldLoop = !autoPlayCheckbox.checked; videoA.loop = shouldLoop; videoB.loop = shouldLoop; }
+
+        function toggleSound(showFeedback = false) {
+            const isMuted = !videoA.muted;
+            videoA.muted = isMuted; videoB.muted = isMuted;
+            updateUI();
+            if (showFeedback) showGestureFeedback('sound', isMuted ? 'Off' : 'On');
+        }
+
+        function toggleAutoplay(showFeedback = false) {
+            autoPlayCheckbox.checked = !autoPlayCheckbox.checked;
+            setLooping();
+            if (showFeedback) showGestureFeedback('autoplay', autoPlayCheckbox.checked ? 'On' : 'Off');
+        }
+
+        function showGestureFeedback(mode, status) {
+            gestureIcon.innerHTML = mode === 'sound' ? (videoA.muted ? ICONS.soundOff : ICONS.soundOn) : ICONS.autoplay;
+            gestureText.textContent = `${mode.charAt(0).toUpperCase() + mode.slice(1)} ${status}`;
+            gestureFeedback.classList.add('visible');
+            setTimeout(() => gestureFeedback.classList.remove('visible'), 1000);
+        }
+
+        function handleTouchStart(e) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }
+
+        function handleTouchEnd(e) {
+            if (touchStartX === 0 && touchStartY === 0) return;
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            touchStartX = 0; touchStartY = 0;
+
+            if (Math.abs(deltaX) > Math.abs(deltaY)) { // Horizontal swipe
+                if (Math.abs(deltaX) > 50) {
+                    if (mobileControlMode === 'sound') toggleSound(true);
+                    else toggleAutoplay(true);
+                }
+            } else { // Vertical swipe or tap
+                if (Math.abs(deltaY) > 50) {
+                    mobileControlMode = mobileControlMode === 'sound' ? 'autoplay' : 'sound';
+                    showGestureFeedback(mobileControlMode, autoPlayCheckbox.checked ? 'On' : 'Off');
+                } else {
+                    playNextContent(); // Tap to skip
+                }
+            }
         }
 
         function init() {
             showStatus("Initializing...");
-            
-            videoA.style.opacity = 1;
-            videoB.style.opacity = 0;
-
-            isDesktop = window.innerWidth > window.innerHeight;
+            isDesktop = window.matchMedia("(min-width: 769px)").matches;
             videoUrls = isDesktop ? CONFIG.videoUrls.desktop : CONFIG.videoUrls.mobile;
             
-            if (!videoUrls || videoUrls.length === 0) {
-                showStatus("Please add your video URLs in the CONFIG section.", 10000);
-                return;
-            }
-
+            if (!videoUrls || videoUrls.length === 0) { showStatus("Please add video URLs to the CONFIG section.", 10000); return; }
             shuffleArray(videoUrls);
 
-            toggleSoundBtn.addEventListener('click', () => {
-                const isMuted = !videoA.muted;
-                videoA.muted = isMuted;
-                videoB.muted = isMuted;
-                updateUI();
-            });
-
-            fullscreenBtn.addEventListener('click', () => {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen();
-                } else {
-                    document.exitFullscreen();
-                }
-            });
-
-            document.addEventListener('fullscreenchange', updateUI);
-            videoContainer.addEventListener('click', playNextContent);
-            window.addEventListener('mousemove', handleUIVisibility);
-            autoPlayCheckbox.addEventListener('change', setLooping);
-
-            showStatus("Loading...", 1500);
-
-            currentIndex = Math.floor(Math.random() * videoUrls.length);
+            if (isDesktop) {
+                // Desktop setup
+                autoPlayCheckbox.checked = true;
+                toggleSoundBtn.addEventListener('click', () => toggleSound());
+                fullscreenBtn.addEventListener('click', () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { document.exitFullscreen(); } });
+                document.addEventListener('fullscreenchange', updateUI);
+                window.addEventListener('mousemove', handleUIVisibility);
+                document.addEventListener('keydown', e => {
+                    if (e.code === 'Space') playNextContent();
+                    if (e.code === 'KeyM') toggleSound();
+                    if (e.code === 'KeyF') fullscreenBtn.click();
+                    if (e.code === 'KeyA') { autoPlayCheckbox.checked = !autoPlayCheckbox.checked; setLooping(); }
+                });
+            } else {
+                // Mobile setup
+                autoPlayCheckbox.checked = true;
+                videoA.muted = true; videoB.muted = true; // Sound starts OFF on mobile
+                videoContainer.addEventListener('touchstart', handleTouchStart);
+                videoContainer.addEventListener('touchend', handleTouchEnd);
+            }
             
+            autoPlayCheckbox.addEventListener('change', setLooping);
+            
+            showStatus("Loading...", 1500);
+            currentIndex = Math.floor(Math.random() * videoUrls.length);
             activeVideoElement.src = videoUrls[currentIndex];
-            activeVideoElement.play().catch(e => {
-                console.error("Initial playback error:", e);
-                handleVideoError(e);
-            });
+            activeVideoElement.play().catch(e => { console.error("Initial playback error:", e); handleVideoError(e); });
             setupEventListeners(activeVideoElement);
             updateUI();
             setLooping();
             
-            // **FIX**: Start the smart queue after 4 seconds of playback
             const startPreloadingListener = () => {
                 if(activeVideoElement.currentTime >= 4) {
                     updatePreloadQueue();
-                    // Remove listener after it has run once
                     activeVideoElement.removeEventListener('timeupdate', startPreloadingListener);
                 }
             };
