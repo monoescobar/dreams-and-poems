@@ -82,23 +82,43 @@
             backdrop-filter: blur(8px);
         }
 
-        .about-link {
+        /* --- Bottom Right UI Container --- */
+        .bottom-right-container {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            padding: 10px;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            text-decoration: none;
-            color: white;
-            background: transparent;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: none;
+        }
+
+        .about-link, .credit-text {
             pointer-events: auto;
             opacity: 0;
             transition: opacity 0.5s ease;
         }
         
-        .ui-visible .about-link { opacity: 0.2; }
-        .about-link:hover { opacity: 1; }
+        .about-link {
+            padding: 10px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .credit-text {
+            font-size: 0.75rem; /* 12px */
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            padding: 8px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        
+        .ui-visible .about-link, .ui-visible .credit-text { opacity: 0.7; }
+        .about-link:hover, .credit-text:hover { opacity: 1; }
 
         .control-bar button, .toggle-switch {
             background: transparent;
@@ -115,9 +135,34 @@
         }
         .toggle-switch { display: flex; align-items: center; }
         .toggle-switch input { display: none; }
-        .toggle-icon { width: 40px; height: 20px; background-color: rgba(255, 255, 255, 0.2); border-radius: 10px; position: relative; transition: background-color 0.3s ease; }
-        .toggle-icon::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.3s ease; }
-        .toggle-switch input:checked + .toggle-icon { background-color: #8B5CF6; }
+        
+        /* --- Updated Toggle Switch Style --- */
+        .toggle-icon { 
+            width: 40px; 
+            height: 20px; 
+            background-color: transparent; /* Transparent background */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-sizing: border-box;
+            border-radius: 10px; 
+            position: relative; 
+            transition: background-color 0.3s ease, border-color 0.3s ease; 
+        }
+        .toggle-icon::after { 
+            content: ''; 
+            position: absolute; 
+            width: 16px; 
+            height: 16px; 
+            border-radius: 50%; 
+            background-color: white; 
+            top: 1px;
+            left: 1px;
+            transition: transform 0.3s ease; 
+        }
+        
+        .toggle-switch input:checked + .toggle-icon { 
+            background-color: #6B7280; 
+            border-color: #6B7280;
+        } 
         .toggle-switch input:checked + .toggle-icon::after { transform: translateX(20px); }
 
         /* --- Progress Bar (Desktop) --- */
@@ -127,7 +172,7 @@
             left: 0;
             height: 3px;
             width: 0%;
-            background-color: rgba(255, 255, 255, 0.5);
+            background-color: rgba(0, 0, 0, 0.09);
             transition: width 0.1s linear;
         }
 
@@ -153,12 +198,12 @@
         /* --- Responsive Design --- */
         @media (max-width: 768px) {
             .desktop-controls, #fullscreen-btn, .about-link {
-                display: none; /* Hide desktop elements on mobile */
+                display: none;
             }
         }
         @media (min-width: 769px) {
             #gesture-feedback {
-                display: none; /* Hide mobile elements on desktop */
+                display: none;
             }
         }
     </style>
@@ -182,7 +227,10 @@
                 </label>
             </div>
         </div>
-        <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" class="about-link">About</a>
+        <div class="bottom-right-container">
+            <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" class="about-link">About</a>
+            <p class="credit-text">Made with ❤️ in NY. Thanks to pCloud and GitHub.</p>
+        </div>
         <div id="gesture-feedback">
             <div id="gesture-icon"></div>
             <div id="gesture-text"></div>
@@ -194,7 +242,8 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const CONFIG = {
-            PRELOAD_BUFFER_SIZE: 3,
+            PRELOAD_BUFFER_SIZE_DESKTOP: 3,
+            PRELOAD_BUFFER_SIZE_MOBILE: 1,
             videoUrls: {
                 desktop: ["https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422005005_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00001-audio.mp4"],
                 mobile: ["https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00017-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00020-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00021-audio.mp4"]
@@ -217,13 +266,16 @@
         let videoUrls = [];
         let currentIndex = -1;
         let isDesktop = true;
+        let preloadBufferSize;
         let uiVisibilityTimeout;
         let activeVideoElement = videoA;
         let inactiveVideoElement = videoB;
         let isTransitioning = false;
         const preloadedVideos = new Map();
-        let mobileControlMode = 'sound'; // 'sound' or 'autoplay'
+        let mobileControlMode = 'sound';
         let touchStartX = 0, touchStartY = 0;
+        let holdTimeout;
+        let wasPausedByHold = false;
 
         const ICONS = {
             soundOn: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`,
@@ -276,9 +328,9 @@
             for (const [url, video] of preloadedVideos.entries()) {
                 const videoIndex = videoUrls.indexOf(url);
                 const distance = (videoIndex - currentIndex + videoUrls.length) % videoUrls.length;
-                if (distance > CONFIG.PRELOAD_BUFFER_SIZE) { preloadedVideos.delete(url); if (video.parentNode) { video.parentNode.removeChild(video); } }
+                if (distance > preloadBufferSize) { preloadedVideos.delete(url); if (video.parentNode) { video.parentNode.removeChild(video); } }
             }
-            for (let i = 1; i <= CONFIG.PRELOAD_BUFFER_SIZE; i++) {
+            for (let i = 1; i <= preloadBufferSize; i++) {
                 const nextIndex = (currentIndex + i) % videoUrls.length;
                 const nextUrl = videoUrls[nextIndex];
                 if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) { startPreloading(nextUrl); }
@@ -297,9 +349,7 @@
         function handleVideoEnd() { if (autoPlayCheckbox.checked && !isTransitioning) { playNextContent(); } }
         
         function handleTimeUpdate() {
-            if (activeVideoElement.duration) {
-                progressBar.style.width = `${(activeVideoElement.currentTime / activeVideoElement.duration) * 100}%`;
-            }
+            if (activeVideoElement.duration) { progressBar.style.width = `${(activeVideoElement.currentTime / activeVideoElement.duration) * 100}%`; }
             if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
             const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
             if (timeRemaining < 3.2) { playNextContent(); }
@@ -310,7 +360,7 @@
         function updateUI() {
             const isMuted = videoA.muted || videoB.muted;
             toggleSoundBtn.innerHTML = isMuted ? ICONS.soundOff : ICONS.soundOn;
-            fullscreenBtn.innerHTML = document.fullscreenElement ? ICONS.fullscreenExit : ICONS.fullscreenEnter;
+            if (isDesktop) { fullscreenBtn.innerHTML = document.fullscreenElement ? ICONS.fullscreenExit : ICONS.fullscreenEnter; }
         }
 
         function handleUIVisibility() { uiOverlay.classList.add('ui-visible'); clearTimeout(uiVisibilityTimeout); uiVisibilityTimeout = setTimeout(() => { uiOverlay.classList.remove('ui-visible'); }, 3000); }
@@ -337,58 +387,63 @@
             setTimeout(() => gestureFeedback.classList.remove('visible'), 1000);
         }
 
-        function handleTouchStart(e) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }
-
-        function handleTouchEnd(e) {
-            if (touchStartX === 0 && touchStartY === 0) return;
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaX = touchEndX - touchStartX;
-            const deltaY = touchEndY - touchStartY;
-            touchStartX = 0; touchStartY = 0;
-
-            if (Math.abs(deltaX) > Math.abs(deltaY)) { // Horizontal swipe
-                if (Math.abs(deltaX) > 50) {
-                    if (mobileControlMode === 'sound') toggleSound(true);
-                    else toggleAutoplay(true);
-                }
-            } else { // Vertical swipe or tap
-                if (Math.abs(deltaY) > 50) {
-                    mobileControlMode = mobileControlMode === 'sound' ? 'autoplay' : 'sound';
-                    showGestureFeedback(mobileControlMode, autoPlayCheckbox.checked ? 'On' : 'Off');
-                } else {
-                    playNextContent(); // Tap to skip
-                }
-            }
-        }
-
         function init() {
             showStatus("Initializing...");
             isDesktop = window.matchMedia("(min-width: 769px)").matches;
+            preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
             videoUrls = isDesktop ? CONFIG.videoUrls.desktop : CONFIG.videoUrls.mobile;
             
             if (!videoUrls || videoUrls.length === 0) { showStatus("Please add video URLs to the CONFIG section.", 10000); return; }
             shuffleArray(videoUrls);
 
             if (isDesktop) {
-                // Desktop setup
                 autoPlayCheckbox.checked = true;
                 toggleSoundBtn.addEventListener('click', () => toggleSound());
                 fullscreenBtn.addEventListener('click', () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { document.exitFullscreen(); } });
                 document.addEventListener('fullscreenchange', updateUI);
                 window.addEventListener('mousemove', handleUIVisibility);
                 document.addEventListener('keydown', e => {
-                    if (e.code === 'Space') playNextContent();
                     if (e.code === 'KeyM') toggleSound();
                     if (e.code === 'KeyF') fullscreenBtn.click();
-                    if (e.code === 'KeyA') { autoPlayCheckbox.checked = !autoPlayCheckbox.checked; setLooping(); }
+                    if (e.code === 'KeyA') toggleAutoplay();
                 });
+                videoContainer.addEventListener('mousedown', () => { activeVideoElement.pause(); });
+                videoContainer.addEventListener('mouseup', () => { activeVideoElement.play(); });
+
             } else {
-                // Mobile setup
                 autoPlayCheckbox.checked = true;
-                videoA.muted = true; videoB.muted = true; // Sound starts OFF on mobile
-                videoContainer.addEventListener('touchstart', handleTouchStart);
-                videoContainer.addEventListener('touchend', handleTouchEnd);
+                videoA.muted = true; videoB.muted = true;
+                videoContainer.addEventListener('touchstart', e => {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    wasPausedByHold = false;
+                    holdTimeout = setTimeout(() => {
+                        activeVideoElement.pause();
+                        wasPausedByHold = true;
+                    }, 300);
+                });
+                videoContainer.addEventListener('touchmove', e => {
+                    const deltaX = e.touches[0].clientX - touchStartX;
+                    const deltaY = e.touches[0].clientY - touchStartY;
+                    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) { clearTimeout(holdTimeout); }
+                });
+                videoContainer.addEventListener('touchend', e => {
+                    clearTimeout(holdTimeout);
+                    if (wasPausedByHold) {
+                        activeVideoElement.play();
+                        return;
+                    }
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const touchEndY = e.changedTouches[0].clientY;
+                    const deltaX = touchEndX - touchStartX;
+                    const deltaY = touchEndY - touchStartY;
+                    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                        if (mobileControlMode === 'sound') toggleSound(true); else toggleAutoplay(true);
+                    } else if (Math.abs(deltaY) > 50) {
+                        mobileControlMode = mobileControlMode === 'sound' ? 'autoplay' : 'sound';
+                        showGestureFeedback(mobileControlMode, autoPlayCheckbox.checked ? 'On' : 'Off');
+                    }
+                });
             }
             
             autoPlayCheckbox.addEventListener('change', setLooping);
