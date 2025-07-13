@@ -28,7 +28,7 @@
             cursor: pointer; /* Add cursor to indicate it's clickable */
         }
         
-        #video-bg {
+        .video-player {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -38,7 +38,7 @@
             height: auto;
             transform: translate(-50%, -50%);
             object-fit: cover;
-            transition: opacity 0.7s ease-in-out;
+            transition: opacity 1.5s ease-in-out; /* Slower transition for cross-fade */
             pointer-events: none; /* Clicks go to the container */
         }
 
@@ -147,7 +147,9 @@
 <body>
 
     <div id="video-container">
-        <video id="video-bg" playsinline muted loop></video>
+        <!-- Two video elements for seamless cross-fading -->
+        <video id="video-a" class="video-player" playsinline muted></video>
+        <video id="video-b" class="video-player" playsinline muted></video>
     </div>
     
     <div id="ui-overlay" class="ui-overlay">
@@ -170,13 +172,9 @@
 
         // --- CONFIGURATION ---
         const CONFIG = {
-            // IMPORTANT: Manually list the direct URLs to your video files here.
             videoUrls: {
                 desktop: [
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00002-audio.mp4",
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00003-audio.mp4",
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424234900_00001-audio.mp4",
-                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00002-audio.mp4"
+                    "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422005005_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422142021_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422142021_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422154801_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422154801_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422170013_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422170013_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422175646_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422175646_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422215627_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422232437_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423080001_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084506_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084506_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084507_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084507_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423122458_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423130957_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423142042_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423150148_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423160042_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165615_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423222421_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423233615_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424001514_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424094939_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424102703_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424132231_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424135710_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424143311_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151724_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151724_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424234900_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00004-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033512_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033512_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033513_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033513_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073813_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073814_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073814_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073815_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102507_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102507_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102508_00001-audio.mp4"
                 ],
                 mobile: [
                     "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00017-audio.mp4",
@@ -189,7 +187,8 @@
 
         // --- DOM ELEMENTS ---
         const videoContainer = document.getElementById('video-container');
-        const videoBg = document.getElementById('video-bg');
+        const videoA = document.getElementById('video-a');
+        const videoB = document.getElementById('video-b');
         const uiOverlay = document.getElementById('ui-overlay');
         const statusIndicator = document.getElementById('status-indicator');
         const toggleSoundBtn = document.getElementById('toggle-sound-btn');
@@ -200,8 +199,10 @@
         let videoUrls = [];
         let currentIndex = -1;
         let isDesktop = true;
-        let preloadedVideo = null;
         let uiVisibilityTimeout;
+        let activeVideoElement = videoA;
+        let inactiveVideoElement = videoB;
+        let isTransitioning = false;
 
         // --- ICONS ---
         const icons = {
@@ -211,10 +212,6 @@
             fullscreenExit: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3v4m0 0h4m-4 0l7-7M3 9v4m0 0h4m-4 0l7-7m11 5v4m0 0h-4m4 0l-7 7M3 15v-4m0 0h4m-4 0l7 7" /></svg>`
         };
 
-        /**
-         * Shuffles an array in place.
-         * @param {Array} array The array to shuffle.
-         */
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -222,11 +219,6 @@
             }
         }
 
-        /**
-         * Displays a status message to the user.
-         * @param {string} message - The message to display.
-         * @param {number} duration - How long to show the message in ms.
-         */
         function showStatus(message, duration = 2000) {
             statusIndicator.textContent = message;
             statusIndicator.style.opacity = '1';
@@ -235,70 +227,69 @@
             }, duration);
         }
 
-        /**
-         * Plays a video at a given index.
-         * @param {number} index - The index of the video to play.
-         */
-        function playContent(index) {
-            if (videoUrls.length === 0) return;
+        function playNextContent() {
+            if (isTransitioning) return;
+            currentIndex++;
+            playContent(currentIndex);
+        }
 
+        function playContent(index) {
+            if (videoUrls.length === 0 || isTransitioning) return;
+            
+            isTransitioning = true;
+            
             currentIndex = index % videoUrls.length;
             const videoUrl = videoUrls[currentIndex];
+            
+            inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
+            inactiveVideoElement.src = videoUrl;
+            inactiveVideoElement.load();
+        }
 
-            // Fade out current video
-            videoBg.style.opacity = 0;
+        function crossFade() {
+            inactiveVideoElement.play().catch(e => console.error("Playback error:", e));
+            
+            inactiveVideoElement.style.opacity = 1;
+            activeVideoElement.style.opacity = 0;
 
             setTimeout(() => {
-                videoBg.src = videoUrl;
-                videoBg.play().catch(e => {
-                    console.error("Playback error on .play():", e);
-                });
+                const temp = activeVideoElement;
+                activeVideoElement = inactiveVideoElement;
+                inactiveVideoElement = temp;
+
+                inactiveVideoElement.pause();
                 
-                // Fade in new video
-                videoBg.style.opacity = 1;
+                setupEventListeners(activeVideoElement);
+                
+                isTransitioning = false;
+            }, 1500);
+        }
+        
+        function setupEventListeners(videoElement) {
+            videoElement.removeEventListener('ended', handleVideoEnd);
+            videoElement.removeEventListener('error', handleVideoError);
 
-                // Preload next video if on desktop
-                if (isDesktop) {
-                    preloadNext();
-                }
-            }, 700); // Match CSS transition duration
+            videoElement.addEventListener('ended', handleVideoEnd);
+            videoElement.addEventListener('error', handleVideoError);
         }
 
-        /**
-         * Changes to the next video.
-         */
-        function nextContent() {
-            playContent(currentIndex + 1);
-        }
-
-        /**
-         * Preloads the next video in the sequence to ensure smooth transitions on desktop.
-         */
-        function preloadNext() {
-            if (videoUrls.length === 0) return;
-            const nextIndex = (currentIndex + 1) % videoUrls.length;
-            const nextUrl = videoUrls[nextIndex];
-            
-            if (!preloadedVideo) {
-                preloadedVideo = document.createElement('video');
-                preloadedVideo.style.display = 'none';
-                document.body.appendChild(preloadedVideo);
+        function handleVideoEnd() {
+            if (autoPlayCheckbox.checked) {
+                playNextContent();
             }
-            preloadedVideo.src = nextUrl;
-            preloadedVideo.load();
         }
 
-        /**
-         * Updates the UI icons based on the current state.
-         */
+        function handleVideoError(e) {
+            console.error("Error loading video:", activeVideoElement.currentSrc, e);
+            showStatus(`Failed to load video. Trying next...`, 3000);
+            setTimeout(playNextContent, 1000);
+        }
+
         function updateUI() {
-            toggleSoundBtn.innerHTML = videoBg.muted ? icons.soundOff : icons.soundOn;
+            toggleSoundBtn.innerHTML = activeVideoElement.muted ? icons.soundOff : icons.soundOn;
             fullscreenBtn.innerHTML = document.fullscreenElement ? icons.fullscreenExit : icons.fullscreenEnter;
         }
 
-        /**
-         * Handles UI visibility based on mouse activity.
-         */
         function handleUIVisibility() {
             uiOverlay.classList.add('ui-visible');
             clearTimeout(uiVisibilityTimeout);
@@ -306,15 +297,18 @@
                 uiOverlay.classList.remove('ui-visible');
             }, 3000);
         }
+        
+        function setLooping() {
+            videoA.loop = !autoPlayCheckbox.checked;
+            videoB.loop = !autoPlayCheckbox.checked;
+        }
 
-        /**
-         * Main initialization function.
-         */
         function init() {
             showStatus("Initializing...");
-            updateUI();
             
-            // 1. Detect device orientation and set video URLs
+            videoA.style.opacity = 1;
+            videoB.style.opacity = 0;
+
             isDesktop = window.innerWidth > window.innerHeight;
             videoUrls = isDesktop ? CONFIG.videoUrls.desktop : CONFIG.videoUrls.mobile;
             
@@ -323,26 +317,12 @@
                 return;
             }
 
-            // 2. Shuffle content for variety
             shuffleArray(videoUrls);
 
-            // 3. Setup event listeners
-            videoBg.addEventListener('ended', () => {
-                if (autoPlayCheckbox.checked) {
-                    nextContent();
-                }
-            });
-
-            videoBg.addEventListener('error', (e) => {
-                console.error("Error loading video:", videoBg.currentSrc, e);
-                if (videoBg.currentSrc && videoBg.currentSrc !== window.location.href) {
-                     showStatus(`Failed to load video. Trying next...`, 3000);
-                }
-                setTimeout(nextContent, 1000);
-            });
-            
             toggleSoundBtn.addEventListener('click', () => {
-                videoBg.muted = !videoBg.muted;
+                const isMuted = !videoA.muted;
+                videoA.muted = isMuted;
+                videoB.muted = isMuted;
                 updateUI();
             });
 
@@ -355,16 +335,24 @@
             });
 
             document.addEventListener('fullscreenchange', updateUI);
-            
-            // Click anywhere on the video container to change the video
-            videoContainer.addEventListener('click', nextContent);
-            
-            // UI visibility
+            videoContainer.addEventListener('click', playNextContent);
             window.addEventListener('mousemove', handleUIVisibility);
+            autoPlayCheckbox.addEventListener('change', setLooping);
 
-            // 4. Start playback
             showStatus("Loading...", 1500);
-            playContent(0);
+
+            // **FIX**: Start with a random index instead of 0
+            currentIndex = Math.floor(Math.random() * videoUrls.length);
+            
+            activeVideoElement.src = videoUrls[currentIndex];
+            activeVideoElement.play().catch(e => console.error("Initial playback error:", e));
+            setupEventListeners(activeVideoElement);
+            updateUI();
+            setLooping();
+            
+            // Preload the *next* video in the shuffled list to start the cycle
+            playContent(currentIndex + 1);
+            isTransitioning = false;
         }
 
         init();
