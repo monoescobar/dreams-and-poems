@@ -172,6 +172,7 @@
 
         // --- CONFIGURATION ---
         const CONFIG = {
+            PRELOAD_BUFFER_SIZE: 3, // How many videos to preload ahead of time
             videoUrls: {
                 desktop: [
                     "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422005005_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422124816_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422142021_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422142021_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422154801_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422154801_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422170013_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422170013_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422175646_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422175646_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422215627_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422232437_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423080001_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084506_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084506_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084507_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423084507_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423122458_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423130957_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423142042_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423150148_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423160042_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165614_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423165615_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423222421_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250423233615_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424001514_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424094939_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424102703_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424132231_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424135710_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424143311_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151724_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151724_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424151725_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250424234900_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00003-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425003929_00004-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033512_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033512_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033513_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425033513_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073813_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073814_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073814_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425073815_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102507_00001-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102507_00002-audio.mp4","https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250425102508_00001-audio.mp4"
@@ -203,6 +204,7 @@
         let activeVideoElement = videoA;
         let inactiveVideoElement = videoB;
         let isTransitioning = false;
+        const preloadedVideos = new Map();
 
         // --- ICONS ---
         const icons = {
@@ -235,15 +237,26 @@
 
         function playContent(index) {
             if (videoUrls.length === 0 || isTransitioning) return;
-            
             isTransitioning = true;
             
             currentIndex = index % videoUrls.length;
             const videoUrl = videoUrls[currentIndex];
-            
-            inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
-            inactiveVideoElement.src = videoUrl;
-            inactiveVideoElement.load();
+
+            if (preloadedVideos.has(videoUrl)) {
+                const preloadedVideo = preloadedVideos.get(videoUrl);
+                preloadedVideos.delete(videoUrl);
+                
+                inactiveVideoElement.src = preloadedVideo.src;
+                inactiveVideoElement.currentTime = 0;
+                document.body.removeChild(preloadedVideo);
+                
+                inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
+                inactiveVideoElement.load();
+            } else {
+                inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
+                inactiveVideoElement.src = videoUrl;
+                inactiveVideoElement.load();
+            }
         }
 
         function crossFade() {
@@ -256,13 +269,52 @@
                 const temp = activeVideoElement;
                 activeVideoElement = inactiveVideoElement;
                 inactiveVideoElement = temp;
-
                 inactiveVideoElement.pause();
                 
                 setupEventListeners(activeVideoElement);
-                
+                updatePreloadQueue();
                 isTransitioning = false;
             }, 1500);
+        }
+
+        function startPreloading(url) {
+            const video = document.createElement('video');
+            video.style.display = 'none';
+            video.src = url;
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = 'auto';
+
+            video.addEventListener('canplaythrough', () => {
+                if (!preloadedVideos.has(url)) {
+                    preloadedVideos.set(url, video);
+                }
+            }, { once: true });
+            
+            document.body.appendChild(video);
+            video.load();
+        }
+
+        function updatePreloadQueue() {
+            const currentUrl = videoUrls[currentIndex % videoUrls.length];
+            for (const [url, video] of preloadedVideos.entries()) {
+                const videoIndex = videoUrls.indexOf(url);
+                const distance = (videoIndex - currentIndex + videoUrls.length) % videoUrls.length;
+                if (distance > CONFIG.PRELOAD_BUFFER_SIZE) {
+                    preloadedVideos.delete(url);
+                    if (video.parentNode) {
+                        video.parentNode.removeChild(video);
+                    }
+                }
+            }
+
+            for (let i = 1; i <= CONFIG.PRELOAD_BUFFER_SIZE; i++) {
+                const nextIndex = (currentIndex + i) % videoUrls.length;
+                const nextUrl = videoUrls[nextIndex];
+                if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) {
+                    startPreloading(nextUrl);
+                }
+            }
         }
         
         function setupEventListeners(videoElement) {
@@ -284,7 +336,6 @@
         function handleTimeUpdate() {
             if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
 
-            // Start transition when 3.2s are left
             const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
             if (timeRemaining < 3.2) {
                 playNextContent();
@@ -366,9 +417,15 @@
             updateUI();
             setLooping();
             
-            // Preload the *next* video in the list to start the cycle
-            playContent(currentIndex + 1);
-            isTransitioning = false;
+            // **FIX**: Start the smart queue after 4 seconds of playback
+            const startPreloadingListener = () => {
+                if(activeVideoElement.currentTime >= 4) {
+                    updatePreloadQueue();
+                    // Remove listener after it has run once
+                    activeVideoElement.removeEventListener('timeupdate', startPreloadingListener);
+                }
+            };
+            activeVideoElement.addEventListener('timeupdate', startPreloadingListener);
         }
 
         init();
