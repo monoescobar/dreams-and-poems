@@ -268,13 +268,25 @@
         function setupEventListeners(videoElement) {
             videoElement.removeEventListener('ended', handleVideoEnd);
             videoElement.removeEventListener('error', handleVideoError);
+            videoElement.removeEventListener('timeupdate', handleTimeUpdate);
 
             videoElement.addEventListener('ended', handleVideoEnd);
             videoElement.addEventListener('error', handleVideoError);
+            videoElement.addEventListener('timeupdate', handleTimeUpdate);
         }
 
         function handleVideoEnd() {
-            if (autoPlayCheckbox.checked) {
+            if (autoPlayCheckbox.checked && !isTransitioning) {
+                playNextContent();
+            }
+        }
+        
+        function handleTimeUpdate() {
+            if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
+
+            // Start transition when 3.2s are left
+            const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
+            if (timeRemaining < 3.2) {
                 playNextContent();
             }
         }
@@ -286,7 +298,8 @@
         }
 
         function updateUI() {
-            toggleSoundBtn.innerHTML = activeVideoElement.muted ? icons.soundOff : icons.soundOn;
+            const isMuted = videoA.muted || videoB.muted;
+            toggleSoundBtn.innerHTML = isMuted ? icons.soundOff : icons.soundOn;
             fullscreenBtn.innerHTML = document.fullscreenElement ? icons.fullscreenExit : icons.fullscreenEnter;
         }
 
@@ -299,8 +312,9 @@
         }
         
         function setLooping() {
-            videoA.loop = !autoPlayCheckbox.checked;
-            videoB.loop = !autoPlayCheckbox.checked;
+            const shouldLoop = !autoPlayCheckbox.checked;
+            videoA.loop = shouldLoop;
+            videoB.loop = shouldLoop;
         }
 
         function init() {
@@ -341,16 +355,18 @@
 
             showStatus("Loading...", 1500);
 
-            // **FIX**: Start with a random index instead of 0
             currentIndex = Math.floor(Math.random() * videoUrls.length);
             
             activeVideoElement.src = videoUrls[currentIndex];
-            activeVideoElement.play().catch(e => console.error("Initial playback error:", e));
+            activeVideoElement.play().catch(e => {
+                console.error("Initial playback error:", e);
+                handleVideoError(e);
+            });
             setupEventListeners(activeVideoElement);
             updateUI();
             setLooping();
             
-            // Preload the *next* video in the shuffled list to start the cycle
+            // Preload the *next* video in the list to start the cycle
             playContent(currentIndex + 1);
             isTransitioning = false;
         }
