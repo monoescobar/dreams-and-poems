@@ -172,9 +172,17 @@
         #gesture-icon { width: 64px; height: 64px; }
         #gesture-text { font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px black; }
 
+        /* --- Responsive Design --- */
         @media (max-width: 768px) {
             .desktop-controls, #fullscreen-btn {
                 display: none;
+            }
+            .about-link {
+                bottom: auto;
+                top: 20px;
+            }
+            .ui-visible .about-link {
+                opacity: 1; /* Make fully visible on mobile interaction */
             }
         }
         @media (min-width: 769px) {
@@ -346,7 +354,6 @@
             videoA.muted = isMuted;
             videoB.muted = isMuted;
             
-            // **FIX**: Explicitly play to resume after unmute on mobile
             if (!isMuted) {
                 activeVideoElement.play().catch(e => console.error("Error resuming playback:", e));
             }
