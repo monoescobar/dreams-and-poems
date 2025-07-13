@@ -82,43 +82,23 @@
             backdrop-filter: blur(8px);
         }
 
-        /* --- Bottom Right UI Container --- */
-        .bottom-right-container {
+        .about-link {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            pointer-events: none;
-        }
-
-        .about-link, .credit-text {
-            pointer-events: auto;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        .about-link {
             padding: 10px;
             border-radius: 30px;
             font-size: 0.9rem;
             text-decoration: none;
             color: white;
-        }
-
-        .credit-text {
-            font-size: 0.75rem; /* 12px */
-            color: rgba(255, 255, 255, 0.8);
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(8px);
-            padding: 8px 12px;
-            border-radius: 20px;
-            white-space: nowrap;
+            background: transparent;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
         
-        .ui-visible .about-link, .ui-visible .credit-text { opacity: 0.7; }
-        .about-link:hover, .credit-text:hover { opacity: 1; }
+        .ui-visible .about-link { opacity: 0.2; }
+        .about-link:hover { opacity: 1; }
 
         .control-bar button, .toggle-switch {
             background: transparent;
@@ -136,11 +116,10 @@
         .toggle-switch { display: flex; align-items: center; }
         .toggle-switch input { display: none; }
         
-        /* --- Updated Toggle Switch Style --- */
         .toggle-icon { 
             width: 40px; 
             height: 20px; 
-            background-color: transparent; /* Transparent background */
+            background-color: transparent;
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-sizing: border-box;
             border-radius: 10px; 
@@ -165,7 +144,6 @@
         } 
         .toggle-switch input:checked + .toggle-icon::after { transform: translateX(20px); }
 
-        /* --- Progress Bar (Desktop) --- */
         #progress-bar {
             position: absolute;
             bottom: 0;
@@ -176,7 +154,6 @@
             transition: width 0.1s linear;
         }
 
-        /* --- Mobile Gesture Feedback --- */
         #gesture-feedback {
             position: fixed;
             top: 50%;
@@ -195,9 +172,8 @@
         #gesture-icon { width: 64px; height: 64px; }
         #gesture-text { font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px black; }
 
-        /* --- Responsive Design --- */
         @media (max-width: 768px) {
-            .desktop-controls, #fullscreen-btn, .about-link {
+            .desktop-controls, #fullscreen-btn {
                 display: none;
             }
         }
@@ -227,10 +203,7 @@
                 </label>
             </div>
         </div>
-        <div class="bottom-right-container">
-            <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" class="about-link">About</a>
-            <p class="credit-text">Made with ❤️ in NY. Thanks to pCloud and GitHub.</p>
-        </div>
+        <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" id="about-link" class="about-link">About</a>
         <div id="gesture-feedback">
             <div id="gesture-icon"></div>
             <div id="gesture-text"></div>
@@ -262,6 +235,7 @@
         const gestureFeedback = document.getElementById('gesture-feedback');
         const gestureIcon = document.getElementById('gesture-icon');
         const gestureText = document.getElementById('gesture-text');
+        const aboutLink = document.getElementById('about-link');
 
         let videoUrls = [];
         let currentIndex = -1;
@@ -387,6 +361,19 @@
             setTimeout(() => gestureFeedback.classList.remove('visible'), 1000);
         }
 
+        function openLinkedIn() {
+            const profileUrl = 'https://www.linkedin.com/in/carlos-escobar-32156b24/';
+            const appUrl = 'linkedin://in/carlos-escobar-32156b24';
+
+            // Try to open the app
+            window.location.href = appUrl;
+
+            // After a short delay, redirect to the web page as a fallback
+            setTimeout(() => {
+                window.location.href = profileUrl;
+            }, 2500);
+        }
+
         function init() {
             showStatus("Initializing...");
             isDesktop = window.matchMedia("(min-width: 769px)").matches;
@@ -395,6 +382,11 @@
             
             if (!videoUrls || videoUrls.length === 0) { showStatus("Please add video URLs to the CONFIG section.", 10000); return; }
             shuffleArray(videoUrls);
+            
+            aboutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                openLinkedIn();
+            });
 
             if (isDesktop) {
                 autoPlayCheckbox.checked = true;
@@ -433,6 +425,7 @@
                         activeVideoElement.play();
                         return;
                     }
+                    handleUIVisibility(); // Show 'About' link on interaction
                     const touchEndX = e.changedTouches[0].clientX;
                     const touchEndY = e.changedTouches[0].clientY;
                     const deltaX = touchEndX - touchStartX;
