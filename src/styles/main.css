@@ -5,7 +5,7 @@
 :root {
   --primary-bg: #000;
   --primary-text: #fff;
-  --ui-overlay-bg: rgba(0, 0, 0, 0.3);
+  --ui-overlay-bg: rgba(255, 255, 255, 0.9);
   --ui-overlay-blur: blur(8px);
   --transition-fast: 0.2s ease;
   --transition-medium: 0.5s ease;
@@ -194,7 +194,7 @@ body {
   border-radius: var(--border-radius-medium);
   font-size: var(--font-size-sm);
   text-decoration: none;
-  color: var(--primary-text);
+  color: #000;
   background: transparent;
   pointer-events: auto;
   opacity: 0;
@@ -233,7 +233,7 @@ body {
 .toggle-switch {
   background: transparent;
   border: none;
-  color: var(--primary-text);
+  color: #000;
   cursor: pointer;
   padding: var(--spacing-xs);
   border-radius: var(--border-radius-large);
