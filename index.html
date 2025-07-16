@@ -25,6 +25,24 @@
     <meta property="twitter:title" content="Dreams and Poems ✨">
     <meta property="twitter:description" content="An immersive visual poetry experience combining abstract video content with interactive storytelling.">
     
+    <!-- PWA Manifest and Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- iOS Safari PWA support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dreams ✨">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    
+    <!-- Android Chrome PWA support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    
+    <!-- Prevent automatic phone number detection -->
+    <meta name="format-detection" content="telephone=no">
+    
     <!-- Performance optimization -->
     <link rel="preconnect" href="https://filedn.com">
     <link rel="dns-prefetch" href="https://filedn.com">
@@ -91,6 +109,19 @@
             border-color: rgba(255, 255, 255, 0.6);
             background: rgba(255, 255, 255, 0.1);
         }
+        
+        #status-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 
@@ -123,7 +154,7 @@
         <a href="https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Carlos_Escobar.pdf" target="_blank" rel="noopener noreferrer"
            id="portfolio-link" class="nav-link portfolio-link" aria-label="View Portfolio - Opens PDF document">Portfolio</a>
         
-        <span id="version-number" class="nav-link version-link" aria-label="Application version v003">v003</span>
+        <span id="version-number" class="nav-link version-link" aria-label="Application version v004">v004</span>
         
         <div id="gesture-feedback" aria-live="polite" aria-atomic="true" role="status">
             <div id="gesture-icon" aria-hidden="true"></div>
@@ -131,10 +162,12 @@
         </div>
     </div>
 
-    <div id="status-indicator" aria-live="polite" aria-atomic="true"></div>
+    <div id="status-indicator" aria-live="polite" aria-atomic="true">Loading Dreams and Poems...</div>
 
     <!-- Load application with enhanced features -->
     <script>
+        console.log('🎬 Dreams and Poems script loading...');
+        
         // Enhanced Dreams and Poems Application v2.0
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🎬 Dreams and Poems v2.0 - Starting initialization...');
@@ -145,7 +178,7 @@
                 PRELOAD_BUFFER_SIZE_MOBILE: 1,
                 CROSSFADE_DURATION: 1500,
                 UI_TIMEOUT: 3000,
-                videoUrls: VIDEO_URLS
+                videoUrls: window.VIDEO_URLS || VIDEO_URLS
             };
 
             // Enhanced error handling
@@ -156,6 +189,9 @@
                 handleError(error, context = {}) {
                     this.errors.push({ error, context, timestamp: Date.now() });
                     console.error('Application error:', error, context);
+                    
+                    // Show visual error message
+                    this.showVisualError(error, context);
                     
                     // Store in localStorage for debugging
                     try {
@@ -188,6 +224,58 @@
                         console.error('Recovery failed:', recoveryError);
                         return false;
                     }
+                },
+                
+                showVisualError(error, context) {
+                    // Create visual error overlay
+                    const errorOverlay = document.createElement('div');
+                    errorOverlay.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.9);
+                        color: white;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 10000;
+                        font-family: monospace;
+                        padding: 2rem;
+                        text-align: center;
+                    `;
+                    
+                    errorOverlay.innerHTML = `
+                        <h2>🚨 Dreams and Poems - Error</h2>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Context:</strong> ${JSON.stringify(context)}</p>
+                        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+                        <button onclick="location.reload()" style="
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            margin-top: 1rem;
+                            font-size: 16px;
+                        ">Reload Page</button>
+                        <button onclick="this.parentElement.remove()" style="
+                            background: transparent;
+                            color: white;
+                            border: 2px solid white;
+                            padding: 10px 22px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            margin-top: 1rem;
+                            margin-left: 1rem;
+                            font-size: 16px;
+                        ">Close</button>
+                    `;
+                    
+                    document.body.appendChild(errorOverlay);
                 }
             };
 
@@ -675,6 +763,11 @@
                     // Load user preferences
                     userPreferences.load();
                     
+                    // Check if video URLs are loaded
+                    if (!CONFIG.videoUrls) {
+                        throw new Error('Video URLs not loaded. Please check video-urls.js file.');
+                    }
+                    
                     // Determine device type and buffer size
                     isDesktop = window.matchMedia("(min-width: 769px)").matches;
                     preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
@@ -745,6 +838,9 @@
                             setupEventListeners(activeVideoElement);
                             updateUI();
                             setLooping();
+                            
+                            // Make UI visible initially
+                            handleUIVisibility();
                             
                             // Start preloading after initial video loads
                             setTimeout(() => {

@@ -1,11 +1,12 @@
 /* Dreams and Poems - Main Styles */
 /* Enhanced with accessibility, performance, and modern features */
+/* Updated: 2025-01-16 - PWA Implementation v004 */
 
 /* --- CSS Custom Properties --- */
 :root {
   --primary-bg: #000;
   --primary-text: #fff;
-  --ui-overlay-bg: rgba(255, 255, 255, 0.9);
+  --ui-overlay-bg: rgba(0, 0, 0, 0.1);
   --ui-overlay-blur: blur(8px);
   --transition-fast: 0.2s ease;
   --transition-medium: 0.5s ease;
@@ -168,7 +169,7 @@ body {
   justify-content: center;
   align-items: center;
   pointer-events: auto;
-  opacity: 0;
+  opacity: 1;
   transition: opacity var(--transition-medium);
 }
 
@@ -194,10 +195,10 @@ body {
   border-radius: var(--border-radius-medium);
   font-size: var(--font-size-sm);
   text-decoration: none;
-  color: #000;
-  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.1);
   pointer-events: auto;
-  opacity: 0;
+  opacity: 0.7;
   transition: opacity var(--transition-medium), transform var(--transition-fast);
   min-height: 44px; /* Accessibility: minimum touch target */
   min-width: 44px;
@@ -209,8 +210,6 @@ body {
 
 .nav-link:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
 }
 
 .about-link { right: 80px; }
@@ -225,7 +224,8 @@ body {
 .nav-link:focus {
   opacity: 1;
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* --- Control Elements --- */
@@ -233,10 +233,10 @@ body {
 .toggle-switch {
   background: transparent;
   border: none;
-  color: #000;
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   padding: var(--spacing-xs);
-  border-radius: var(--border-radius-large);
+  border-radius: 0;
   transition: transform var(--transition-fast), background-color var(--transition-fast);
   min-height: 44px;
   min-width: 44px;
@@ -249,13 +249,13 @@ body {
 .control-btn:focus,
 .toggle-switch:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
 }
 
 .control-btn:hover,
 .toggle-switch:hover {
   transform: scale(1.1);
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .control-btn:active,
@@ -314,11 +314,13 @@ body {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
-  width: 0%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  height: 2px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  mix-blend-mode: difference;
   transition: width 0.1s linear;
-  border-radius: 0 2px 0 0;
+  border-radius: 0;
+  z-index: 5;
 }
 
 /* --- Gesture Feedback --- */
@@ -455,11 +457,63 @@ body {
   }
 }
 
+/* --- PWA Standalone Mode --- */
+@media (display-mode: standalone) {
+  /* When app is installed and running as PWA */
+  body {
+    /* Ensure full immersion */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Hide browser-specific elements when in app mode */
+  .browser-only {
+    display: none !important;
+  }
+  
+  /* Adjust UI for standalone experience */
+  .nav-link {
+    /* Slightly larger touch targets in app mode */
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Status bar styling for iOS */
+  #status-indicator {
+    top: calc(var(--spacing-lg) + env(safe-area-inset-top));
+  }
+  
+  .connection-indicator {
+    top: calc(var(--spacing-lg) + env(safe-area-inset-top));
+  }
+}
+
+/* --- iOS PWA Status Bar Support --- */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific PWA adjustments */
+  @media (display-mode: standalone) {
+    body {
+      /* Prevent bounce scrolling */
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Handle iPhone notch and home indicator */
+    .ui-overlay {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
+
 /* --- Dark Mode Support --- */
 @media (prefers-color-scheme: light) {
   /* Light mode adjustments if needed */
   :root {
-    --ui-overlay-bg: rgba(255, 255, 255, 0.9);
-    --primary-text: #1f2937;
+    --ui-overlay-bg: rgba(0, 0, 0, 0.1);
+    --primary-text: rgba(255, 255, 255, 0.4);
   }
 }

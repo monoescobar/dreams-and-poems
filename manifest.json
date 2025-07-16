@@ -1,0 +1,41 @@
+{
+  "name": "Dreams and Poems ✨",
+  "short_name": "Dreams",
+  "description": "An immersive visual poetry experience by Carlos Escobar. Explore abstract and surreal video content that combines art, technology, and emotion.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "scope": "./",
+  "lang": "en",
+  "categories": ["art", "entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dreams and Poems</title>
+    <style>
+        body {
+            margin: 0;
+            background: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            background: #333;
+            border-radius: 5px;
+        }
+        .error {
+            background: #d32f2f;
+        }
+        .success {
+            background: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Dreams and Poems - Debug Test</h1>
+        <div id="status-container"></div>
+        <div id="video-test" style="width: 300px; height: 200px; background: #333; display: flex; align-items: center; justify-content: center;">
+            <span>Loading video...</span>
+        </div>
+    </div>
+
+    <script src="video-urls.js"></script>
+    <script>
+        function addStatus(message, type = 'status') {
+            const container = document.getElementById('status-container');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            container.appendChild(div);
+            console.log(message);
+        }
+
+        // Test if video-urls.js loaded
+        addStatus('Testing video URLs loading...');
+        
+        if (typeof window.VIDEO_URLS !== 'undefined') {
+            addStatus('✅ VIDEO_URLS loaded successfully', 'success');
+            addStatus(`Desktop videos: ${window.VIDEO_URLS.desktop ? window.VIDEO_URLS.desktop.length : 'undefined'}`);
+            addStatus(`Mobile videos: ${window.VIDEO_URLS.mobile ? window.VIDEO_URLS.mobile.length : 'undefined'}`);
+            
+            // Test video loading
+            if (window.VIDEO_URLS.desktop && window.VIDEO_URLS.desktop.length > 0) {
+                const testVideo = document.createElement('video');
+                testVideo.style.width = '100%';
+                testVideo.style.height = '100%';
+                testVideo.controls = true;
+                testVideo.muted = true;
+                testVideo.src = window.VIDEO_URLS.desktop[0];
+                
+                testVideo.addEventListener('loadeddata', () => {
+                    addStatus('✅ First video loaded successfully', 'success');
+                });
+                
+                testVideo.addEventListener('error', (e) => {
+                    addStatus('❌ Video loading failed: ' + e.message, 'error');
+                });
+                
+                document.getElementById('video-test').innerHTML = '';
+                document.getElementById('video-test').appendChild(testVideo);
+                
+                addStatus('Testing first video: ' + window.VIDEO_URLS.desktop[0]);
+            }
+        } else {
+            addStatus('❌ VIDEO_URLS not found - video-urls.js failed to load', 'error');
+        }
+
+        // Test CSS loading
+        const linkElement = document.createElement('link');
+        linkElement.rel = 'stylesheet';
+        linkElement.href = 'src/styles/main.css';
+        linkElement.onload = () => addStatus('✅ CSS loaded successfully', 'success');
+        linkElement.onerror = () => addStatus('❌ CSS failed to load', 'error');
+        document.head.appendChild(linkElement);
+    </script>
+</body>
+</html>

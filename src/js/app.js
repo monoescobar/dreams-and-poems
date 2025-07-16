@@ -2,7 +2,7 @@
  * Dreams and Poems - Main Application
  * Enhanced video player application with modular architecture
  * 
- * @version 2.0.0
+ * @version 004
  * @author Carlos Escobar
  */
 
@@ -12,7 +12,7 @@ import { UIController } from './uiController.js';
 
 class DreamsAndPoemsApp {
   constructor() {
-    this.version = '2.0.0';
+    this.version = '004';
     this.isInitialized = false;
     this.config = this.loadConfiguration();
     
@@ -108,6 +108,9 @@ class DreamsAndPoemsApp {
       
       // Initialize UI controller
       await this.initializeUIController(elements);
+      
+      // Initialize PWA functionality
+      this.initializePWA();
       
       // Setup application event handlers
       this.setupApplicationEventHandlers();
@@ -250,6 +253,181 @@ class DreamsAndPoemsApp {
     this.setupUIControllerEvents();
     
     console.log('✅ UI controller initialized');
+  }
+
+  /**
+   * Initialize PWA functionality
+   */
+  initializePWA() {
+    try {
+      console.log('📱 Initializing PWA functionality...');
+      
+      // Check if running as PWA
+      const isPWA = this.detectPWAMode();
+      
+      // Handle install prompt
+      this.setupInstallPrompt();
+      
+      // Setup PWA event listeners
+      this.setupPWAEventListeners();
+      
+      // Handle iOS Safari specifics
+      this.handleIOSPWA();
+      
+      console.log(`✅ PWA initialized - Running as: ${isPWA ? 'PWA' : 'Browser'}`);
+      
+    } catch (error) {
+      console.warn('PWA initialization failed:', error);
+    }
+  }
+
+  /**
+   * Detect if app is running as PWA
+   */
+  detectPWAMode() {
+    // Check display mode
+    const standalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    // Check iOS standalone mode
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const iOSStandalone = iOS && window.navigator.standalone;
+    
+    // Check Android TWA (Trusted Web Activity)
+    const androidTWA = document.referrer.includes('android-app://');
+    
+    const isPWA = standalone || iOSStandalone || androidTWA;
+    
+    // Add PWA class to body for CSS targeting
+    if (isPWA) {
+      document.body.classList.add('pwa-mode');
+    }
+    
+    return isPWA;
+  }
+
+  /**
+   * Setup install prompt handling
+   */
+  setupInstallPrompt() {
+    let deferredPrompt = null;
+    
+    // Listen for install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('💾 Install prompt available');
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Could show custom install button here
+      this.handleInstallPromptAvailable(deferredPrompt);
+    });
+    
+    // Listen for app installation
+    window.addEventListener('appinstalled', () => {
+      console.log('✅ App installed successfully');
+      deferredPrompt = null;
+      
+      // Track installation
+      this.trackPWAInstall();
+    });
+  }
+
+  /**
+   * Handle when install prompt becomes available
+   */
+  handleInstallPromptAvailable(deferredPrompt) {
+    // For now, just log it. Could implement custom install UI later
+    console.log('Install prompt ready - could show custom install button');
+    
+    // Example: Show install button after user interaction
+    // This could be triggered by a gesture or after some time
+    setTimeout(() => {
+      if (deferredPrompt && !this.detectPWAMode()) {
+        console.log('Auto-suggesting app installation');
+        // deferredPrompt.prompt(); // Uncomment to auto-prompt
+      }
+    }, 30000); // After 30 seconds
+  }
+
+  /**
+   * Setup PWA-specific event listeners
+   */
+  setupPWAEventListeners() {
+    // Handle display mode changes
+    const displayModeQuery = window.matchMedia('(display-mode: standalone)');
+    displayModeQuery.addEventListener('change', (e) => {
+      console.log('Display mode changed:', e.matches ? 'standalone' : 'browser');
+      
+      if (e.matches) {
+        document.body.classList.add('pwa-mode');
+      } else {
+        document.body.classList.remove('pwa-mode');
+      }
+    });
+    
+    // Handle service worker messages
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'APP_INSTALLED') {
+          console.log('Service Worker: App installation confirmed');
+        }
+      });
+    }
+  }
+
+  /**
+   * Handle iOS PWA specifics
+   */
+  handleIOSPWA() {
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (iOS) {
+      // Prevent iOS bounce scrolling in PWA mode
+      if (window.navigator.standalone) {
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
+      }
+      
+      // Handle iOS safe areas
+      const viewport = document.querySelector('meta[name=viewport]');
+      if (viewport && window.navigator.standalone) {
+        viewport.content = viewport.content + ', viewport-fit=cover';
+      }
+    }
+  }
+
+  /**
+   * Track PWA installation for analytics
+   */
+  trackPWAInstall() {
+    // Could send to analytics service
+    const installData = {
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      platform: this.detectPlatform()
+    };
+    
+    // Store locally for now
+    try {
+      localStorage.setItem('pwa_install_data', JSON.stringify(installData));
+    } catch (e) {
+      console.warn('Could not store PWA install data:', e);
+    }
+  }
+
+  /**
+   * Detect user platform
+   */
+  detectPlatform() {
+    const ua = navigator.userAgent;
+    
+    if (/iPad|iPhone|iPod/.test(ua)) return 'iOS';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Windows/.test(ua)) return 'Windows';
+    if (/Mac/.test(ua)) return 'macOS';
+    if (/Linux/.test(ua)) return 'Linux';
+    
+    return 'Unknown';
   }
 
   /**

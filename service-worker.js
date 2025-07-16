@@ -1,19 +1,21 @@
 /**
  * Dreams and Poems - Service Worker
  * Provides offline support and performance optimization
+ * Enhanced with PWA installation support
  * 
- * @version 2.0.0
+ * @version 004
  * @author Carlos Escobar
  */
 
-const CACHE_NAME = 'dreams-and-poems-v2';
-const STATIC_CACHE_NAME = 'dreams-and-poems-static-v2';
-const DYNAMIC_CACHE_NAME = 'dreams-and-poems-dynamic-v2';
+const CACHE_NAME = 'dreams-and-poems-v004';
+const STATIC_CACHE_NAME = 'dreams-and-poems-static-v004';
+const DYNAMIC_CACHE_NAME = 'dreams-and-poems-dynamic-v004';
 
 // Files to cache immediately
 const STATIC_FILES = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/src/styles/main.css',
   '/src/js/app.js',
   '/src/js/utils.js',
@@ -21,7 +23,9 @@ const STATIC_FILES = [
   '/src/js/uiController.js',
   '/src/js/errorBoundary.js',
   '/video-urls.js',
-  '/version.json'
+  '/version.json',
+  '/icon-192x192.png',
+  '/icon-512x512.png'
 ];
 
 // Maximum cache sizes
@@ -527,4 +531,55 @@ async function clearCaches() {
   console.log('Service Worker: All caches cleared');
 }
 
-console.log('Service Worker: Script loaded');
+/**
+ * PWA Installation Events
+ */
+
+// Handle app installation
+self.addEventListener('appinstalled', (event) => {
+  console.log('PWA: App was installed successfully');
+  
+  // Send analytics or track installation
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'APP_INSTALLED',
+        timestamp: Date.now()
+      });
+    });
+  });
+});
+
+// Handle beforeinstallprompt (for custom install UI)
+self.addEventListener('beforeinstallprompt', (event) => {
+  console.log('PWA: Before install prompt triggered');
+  
+  // Prevent the default install prompt
+  event.preventDefault();
+  
+  // Send the event to the main thread for custom handling
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'BEFORE_INSTALL_PROMPT',
+        timestamp: Date.now()
+      });
+    });
+  });
+});
+
+// Handle app launch from home screen
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_PWA_STATUS') {
+    event.ports[0].postMessage({
+      isInstalled: true,
+      displayMode: self.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+    });
+  }
+});
+
+console.log('Service Worker: Script loaded with PWA support');

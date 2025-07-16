@@ -42,7 +42,7 @@ const VIDEO_CONFIG = {
 };
 
 // Video URLs configuration for Dreams and Poems
-const VIDEO_URLS = {
+window.VIDEO_URLS = {
     desktop: [
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422005005_00001-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250422092603_00001-audio.mp4",
