@@ -79,12 +79,12 @@ body {
   will-change: opacity;
 }
 
-/* Mobile video adjustments - prevent zoom */
+/* Mobile video adjustments - show full video without cropping */
 @media (max-width: 768px) {
   .video-player {
-    object-fit: cover;
+    object-fit: contain;
     object-position: center center;
-    /* Ensure videos fill container without zoom */
+    /* Show complete video without cropping */
     width: 100%;
     height: 100%;
     min-width: unset;
@@ -499,14 +499,14 @@ body.ui-hidden #progress-bar {
   }
   
   .video-player {
-    /* Prevent zoom/scaling issues on mobile */
-    object-fit: cover;
+    /* Show full video without cropping on mobile */
+    object-fit: contain;
     object-position: center center;
     width: 100%;
     height: 100%;
     min-width: unset;
     min-height: unset;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%);
   }
 }
 
