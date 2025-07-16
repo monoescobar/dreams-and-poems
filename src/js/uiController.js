@@ -1,8 +1,9 @@
 /**
  * Dreams and Poems - UI Controller
  * Advanced UI management with accessibility, responsive design, and enhanced UX
+ * Auto-hide UI after 3 seconds of inactivity
  * 
- * @version 2.0.0
+ * @version 006
  * @author Carlos Escobar
  */
 
@@ -20,7 +21,7 @@ export class UIController {
 
     this.elements = {};
     this.state = {
-      uiVisible: false,
+      uiVisible: false,  // Start with UI hidden
       muted: true,
       autoplay: true,
       fullscreen: false,
@@ -48,6 +49,11 @@ export class UIController {
     this.setupEventListeners();
     this.setupAccessibility();
     this.updateUIState();
+    
+    // Force UI to start hidden
+    document.body.classList.add('ui-hidden');
+    this.elements.uiOverlay.classList.add('ui-hidden');
+    this.state.uiVisible = false;
     
     // Initialize responsive behavior
     this.setupResponsiveHandlers();
@@ -179,7 +185,10 @@ export class UIController {
   setupEventHandlers() {
     // UI visibility handlers
     this.uiVisibilityHandler = PerformanceUtils.throttle(() => {
-      this.showUI();
+      // Only show UI if it's currently hidden
+      if (!this.state.uiVisible) {
+        this.showUI();
+      }
     }, 100);
 
     // Keyboard handlers
@@ -260,6 +269,13 @@ export class UIController {
   setupCommonEventListeners() {
     // Window resize
     window.addEventListener('resize', this.resizeHandler);
+    
+    // Global interaction listeners for UI visibility
+    document.addEventListener('mousemove', this.uiVisibilityHandler);
+    document.addEventListener('mousedown', this.uiVisibilityHandler);
+    document.addEventListener('touchstart', this.uiVisibilityHandler, { passive: true });
+    // Removed touchmove - it fires too frequently and prevents auto-hide
+    document.addEventListener('keydown', this.uiVisibilityHandler);
     
     // Autoplay toggle
     this.elements.autoPlayCheckbox.addEventListener('change', () => {
@@ -563,6 +579,8 @@ export class UIController {
   showUI() {
     this.state.uiVisible = true;
     this.elements.uiOverlay.classList.add('ui-visible');
+    this.elements.uiOverlay.classList.remove('ui-hidden');
+    document.body.classList.remove('ui-hidden');
     
     // Clear existing timeout
     if (this.timeouts.has('uiHide')) {
@@ -583,6 +601,8 @@ export class UIController {
   hideUI() {
     this.state.uiVisible = false;
     this.elements.uiOverlay.classList.remove('ui-visible');
+    this.elements.uiOverlay.classList.add('ui-hidden');
+    document.body.classList.add('ui-hidden');
     
     if (this.timeouts.has('uiHide')) {
       clearTimeout(this.timeouts.get('uiHide'));
@@ -694,6 +714,11 @@ export class UIController {
     // Update autoplay checkbox
     if (this.elements.autoPlayCheckbox) {
       this.elements.autoPlayCheckbox.checked = this.state.autoplay;
+    }
+    
+    // Start with UI hidden
+    if (!this.state.uiVisible) {
+      this.elements.uiOverlay.classList.add('ui-hidden');
     }
   }
 

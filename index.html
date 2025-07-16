@@ -154,7 +154,7 @@
         <a href="https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Carlos_Escobar.pdf" target="_blank" rel="noopener noreferrer"
            id="portfolio-link" class="nav-link portfolio-link" aria-label="View Portfolio - Opens PDF document">Portfolio</a>
         
-        <span id="version-number" class="nav-link version-link" aria-label="Application version v004">v004</span>
+        <span id="version-number" class="nav-link version-link" aria-label="Application version v007">v007</span>
         
         <div id="gesture-feedback" aria-live="polite" aria-atomic="true" role="status">
             <div id="gesture-icon" aria-hidden="true"></div>
@@ -825,37 +825,76 @@
                         }
                     });
 
-                    // Start playing
+                    // Start playing - be more aggressive about autoplay
                     showStatus("Loading first video...", 1500);
                     currentIndex = Math.floor(Math.random() * videoUrls.length);
                     
-                    activeVideoElement.src = videoUrls[currentIndex];
-                    const playPromise = activeVideoElement.play();
+                    // Ensure videos are muted for better autoplay compatibility
+                    videoA.muted = true;
+                    videoB.muted = true;
+                    videoA.playsInline = true;
+                    videoB.playsInline = true;
                     
-                    if (playPromise) {
-                        playPromise.then(() => {
-                            console.log('✅ Initial video started');
+                    activeVideoElement.src = videoUrls[currentIndex];
+                    
+                    // Try multiple approaches to start playback
+                    const attemptAutoplay = async () => {
+                        try {
+                            await activeVideoElement.play();
+                            console.log('✅ Autoplay successful');
                             setupEventListeners(activeVideoElement);
                             updateUI();
                             setLooping();
-                            
-                            // Make UI visible initially
                             handleUIVisibility();
                             
-                            // Start preloading after initial video loads
                             setTimeout(() => {
                                 updatePreloadQueue();
                             }, 2000);
                             
-                            showStatus("Ready to play!", 2000);
+                            showStatus("Playing automatically!", 2000);
                             announceToScreenReader('Dreams and Poems video player ready');
                             
-                        }).catch(e => {
-                            console.error("Initial playback error:", e);
-                            needsTapToResume = true;
-                            showStatus('Tap anywhere to start playing', 5000);
-                        });
-                    }
+                        } catch (error) {
+                            console.log('Autoplay blocked by browser, trying fallback...');
+                            
+                            // Try with lower volume first
+                            activeVideoElement.volume = 0.01;
+                            try {
+                                await activeVideoElement.play();
+                                console.log('✅ Autoplay successful with low volume');
+                                setupEventListeners(activeVideoElement);
+                                updateUI();
+                                setLooping();
+                                handleUIVisibility();
+                                showStatus("Playing automatically!", 2000);
+                                
+                            } catch (secondError) {
+                                console.log('All autoplay attempts failed, requiring user interaction');
+                                needsTapToResume = true;
+                                showStatus('Tap anywhere to start playing', 5000);
+                                
+                                // Add click listener to entire page for easier activation
+                                const activateOnInteraction = () => {
+                                    activeVideoElement.play().then(() => {
+                                        needsTapToResume = false;
+                                        showStatus('Playing!', 1000);
+                                        setupEventListeners(activeVideoElement);
+                                        updateUI();
+                                        setLooping();
+                                        document.removeEventListener('click', activateOnInteraction);
+                                        document.removeEventListener('touchstart', activateOnInteraction);
+                                    }).catch(err => {
+                                        console.error('Manual activation failed:', err);
+                                    });
+                                };
+                                
+                                document.addEventListener('click', activateOnInteraction);
+                                document.addEventListener('touchstart', activateOnInteraction);
+                            }
+                        }
+                    };
+                    
+                    attemptAutoplay();
 
                 } catch (error) {
                     errorBoundary.handleError(error, { context: 'initialization' });

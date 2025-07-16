@@ -2,7 +2,7 @@
  * Dreams and Poems - Main Application
  * Enhanced video player application with modular architecture
  * 
- * @version 004
+ * @version 005
  * @author Carlos Escobar
  */
 
@@ -12,7 +12,7 @@ import { UIController } from './uiController.js';
 
 class DreamsAndPoemsApp {
   constructor() {
-    this.version = '004';
+    this.version = '005';
     this.isInitialized = false;
     this.config = this.loadConfiguration();
     

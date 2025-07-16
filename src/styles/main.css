@@ -1,6 +1,6 @@
 /* Dreams and Poems - Main Styles */
 /* Enhanced with accessibility, performance, and modern features */
-/* Updated: 2025-01-16 - PWA Implementation v004 */
+/* Updated: 2025-01-16 - Auto-hide UI Implementation v006 */
 
 /* --- CSS Custom Properties --- */
 :root {
@@ -122,6 +122,26 @@ body {
   height: 100%;
   z-index: var(--z-ui);
   pointer-events: none;
+  opacity: 0; /* Start hidden by default */
+  transition: opacity var(--transition-medium);
+}
+
+.ui-overlay.ui-visible {
+  opacity: 1;
+}
+
+.ui-overlay.ui-hidden {
+  opacity: 0;
+}
+
+/* Hide all UI elements when ui-hidden */
+.ui-overlay.ui-hidden .nav-link,
+.ui-overlay.ui-hidden .desktop-controls,
+.ui-overlay.ui-hidden .control-bar,
+.ui-overlay.ui-hidden .connection-indicator,
+.ui-overlay.ui-hidden #status-indicator {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* --- Error Boundary --- */
@@ -169,12 +189,18 @@ body {
   justify-content: center;
   align-items: center;
   pointer-events: auto;
-  opacity: 1;
+  opacity: 0; /* Start hidden */
   transition: opacity var(--transition-medium);
 }
 
-.ui-visible .desktop-controls {
+.ui-overlay.ui-visible .desktop-controls {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.ui-overlay.ui-hidden .desktop-controls {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .control-bar {
@@ -196,10 +222,10 @@ body {
   font-size: var(--font-size-sm);
   text-decoration: none;
   color: rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.1);
+  background: transparent; /* Completely transparent background */
   pointer-events: auto;
-  opacity: 0.7;
-  transition: opacity var(--transition-medium), transform var(--transition-fast);
+  opacity: 0; /* Start hidden */
+  transition: opacity var(--transition-medium), transform var(--transition-fast), color var(--transition-fast);
   min-height: 44px; /* Accessibility: minimum touch target */
   min-width: 44px;
   display: flex;
@@ -216,8 +242,15 @@ body {
 .portfolio-link { left: var(--spacing-lg); }
 .version-link { right: var(--spacing-lg); }
 
-.ui-visible .nav-link {
-  opacity: 0.7;
+/* Show navigation links when UI is visible */
+.ui-overlay.ui-visible .nav-link {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ui-overlay.ui-hidden .nav-link {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .nav-link:hover,
@@ -314,13 +347,25 @@ body {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 1px;
   width: 100%;
   background: rgba(255, 255, 255, 0.8);
   mix-blend-mode: difference;
-  transition: width 0.1s linear;
+  transition: width 0.1s linear, opacity var(--transition-medium);
   border-radius: 0;
   z-index: 5;
+  opacity: 0; /* Start hidden */
+}
+
+/* Show progress bar when UI is visible */
+.ui-overlay.ui-visible ~ * #progress-bar,
+body:not(.ui-hidden) #progress-bar {
+  opacity: 1;
+}
+
+/* Hide progress bar when UI is hidden */
+body.ui-hidden #progress-bar {
+  opacity: 0;
 }
 
 /* --- Gesture Feedback --- */
@@ -425,10 +470,6 @@ body {
   .desktop-controls,
   #fullscreen-btn {
     display: none;
-  }
-
-  .ui-visible .nav-link {
-    opacity: 1;
   }
   
   .nav-link {
