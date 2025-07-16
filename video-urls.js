@@ -1,3 +1,46 @@
+/**
+ * Dreams and Poems - Video URLs Configuration
+ * Enhanced with metadata, categorization, and error handling
+ * 
+ * @version 2.0.0
+ * @author Carlos Escobar
+ * @description Video URL configuration with enhanced features
+ */
+
+// Video metadata for enhanced features
+const VIDEO_METADATA = {
+  quality: {
+    desktop: 'high',
+    mobile: 'medium'
+  },
+  formats: ['mp4'],
+  cdn: {
+    primary: 'filedn.com',
+    fallback: null
+  },
+  categories: {
+    dreams: 'Abstract and surreal content',
+    poems: 'Text-based poetic content',
+    mixed: 'Combined audio-visual poetry'
+  }
+};
+
+// Configuration for video loading and playback
+const VIDEO_CONFIG = {
+  preload: {
+    desktop: 3,
+    mobile: 1
+  },
+  retry: {
+    maxAttempts: 3,
+    delay: 1000
+  },
+  timeout: {
+    loading: 30000,
+    buffer: 5000
+  }
+};
+
 // Video URLs configuration for Dreams and Poems
 const VIDEO_URLS = {
     desktop: [
