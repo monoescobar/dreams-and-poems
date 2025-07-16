@@ -133,46 +133,815 @@
 
     <div id="status-indicator" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Load application modules -->
-    <script type="module">
-        // Import error boundary first for early error catching
-        import('./src/js/errorBoundary.js');
-        
-        // Import and initialize main application
-        import('./src/js/app.js').catch(error => {
-            console.error('Failed to load application:', error);
+    <!-- Load application with enhanced features -->
+    <script>
+        // Enhanced Dreams and Poems Application v2.0
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎬 Dreams and Poems v2.0 - Starting initialization...');
             
-            // Fallback error display
-            document.body.innerHTML = `
-                <div style="
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    text-align: center;
-                    color: white;
-                    background: rgba(0, 0, 0, 0.9);
-                    padding: 2rem;
-                    border-radius: 12px;
-                    font-family: sans-serif;
-                ">
-                    <h2>🚨 Loading Error</h2>
-                    <p>Failed to load Dreams and Poems application.</p>
-                    <p>Please check your internet connection and try again.</p>
-                    <button onclick="location.reload()" style="
-                        background: #3b82f6;
-                        color: white;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        font-weight: 600;
-                        margin-top: 1rem;
-                    ">
-                        Reload Page
-                    </button>
-                </div>
-            `;
+            // Configuration
+            const CONFIG = {
+                PRELOAD_BUFFER_SIZE_DESKTOP: 3,
+                PRELOAD_BUFFER_SIZE_MOBILE: 1,
+                CROSSFADE_DURATION: 1500,
+                UI_TIMEOUT: 3000,
+                videoUrls: VIDEO_URLS
+            };
+
+            // Enhanced error handling
+            const errorBoundary = {
+                errors: [],
+                maxErrors: 10,
+                
+                handleError(error, context = {}) {
+                    this.errors.push({ error, context, timestamp: Date.now() });
+                    console.error('Application error:', error, context);
+                    
+                    // Store in localStorage for debugging
+                    try {
+                        const stored = JSON.parse(localStorage.getItem('dreamsAndPoems.errors') || '[]');
+                        stored.push({ message: error.message, context, timestamp: Date.now() });
+                        if (stored.length > 20) stored.splice(0, stored.length - 20);
+                        localStorage.setItem('dreamsAndPoems.errors', JSON.stringify(stored));
+                    } catch (e) {
+                        console.warn('Failed to store error:', e);
+                    }
+                    
+                    // Show user-friendly message
+                    showStatus(`Error: ${error.message}. Retrying...`, 3000);
+                },
+                
+                recover() {
+                    try {
+                        // Clear problematic state
+                        preloadedVideos.clear();
+                        isTransitioning = false;
+                        
+                        // Restart from random video
+                        setTimeout(() => {
+                            const randomIndex = Math.floor(Math.random() * videoUrls.length);
+                            playContent(randomIndex);
+                        }, 1000);
+                        
+                        return true;
+                    } catch (recoveryError) {
+                        console.error('Recovery failed:', recoveryError);
+                        return false;
+                    }
+                }
+            };
+
+            // Global error handlers
+            window.addEventListener('error', (event) => {
+                errorBoundary.handleError(event.error || new Error(event.message), {
+                    type: 'javascript',
+                    filename: event.filename,
+                    lineno: event.lineno
+                });
+            });
+
+            window.addEventListener('unhandledrejection', (event) => {
+                errorBoundary.handleError(event.reason, { type: 'promise_rejection' });
+            });
+
+            // DOM elements
+            const videoContainer = document.getElementById('video-container');
+            const videoA = document.getElementById('video-a');
+            const videoB = document.getElementById('video-b');
+            const uiOverlay = document.getElementById('ui-overlay');
+            const statusIndicator = document.getElementById('status-indicator');
+            const toggleSoundBtn = document.getElementById('toggle-sound-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const autoPlayCheckbox = document.getElementById('auto-play-checkbox');
+            const progressBar = document.getElementById('progress-bar');
+            const gestureFeedback = document.getElementById('gesture-feedback');
+            const gestureIcon = document.getElementById('gesture-icon');
+            const gestureText = document.getElementById('gesture-text');
+            const aboutLink = document.getElementById('about-link');
+
+            // Application state
+            let videoUrls = [];
+            let currentIndex = -1;
+            let isDesktop = window.matchMedia("(min-width: 769px)").matches;
+            let preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
+            let uiVisibilityTimeout;
+            let activeVideoElement = videoA;
+            let inactiveVideoElement = videoB;
+            let isTransitioning = false;
+            const preloadedVideos = new Map();
+            let mobileControlMode = 'sound';
+            let touchStartX = 0, touchStartY = 0;
+            let holdTimeout;
+            let wasPausedByHold = false;
+            let needsTapToResume = false;
+
+            // Enhanced user preferences
+            const userPreferences = {
+                load() {
+                    try {
+                        const stored = localStorage.getItem('dreamsAndPoems.preferences');
+                        if (stored) {
+                            const prefs = JSON.parse(stored);
+                            videoA.muted = videoB.muted = prefs.muted !== false;
+                            autoPlayCheckbox.checked = prefs.autoplay !== false;
+                            mobileControlMode = prefs.mobileControlMode || 'sound';
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load preferences:', e);
+                    }
+                },
+                
+                save() {
+                    try {
+                        const prefs = {
+                            muted: videoA.muted,
+                            autoplay: autoPlayCheckbox.checked,
+                            mobileControlMode: mobileControlMode,
+                            lastSaved: Date.now()
+                        };
+                        localStorage.setItem('dreamsAndPoems.preferences', JSON.stringify(prefs));
+                    } catch (e) {
+                        console.warn('Failed to save preferences:', e);
+                    }
+                }
+            };
+
+            // Enhanced icons with better accessibility
+            const ICONS = {
+                soundOn: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`,
+                soundOff: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`,
+                fullscreenEnter: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>`,
+                fullscreenExit: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3v4m0 0h4m-4 0l7-7M3 9v4m0 0h4m-4 0l7-7m11 5v4m0 0h-4m4 0l-7 7M3 15v-4m0 0h4m-4 0l7 7" /></svg>`,
+                autoplay: `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10c0-2.21-1.79-4-4-4s-4 1.79-4 4 1.79 4 4 4c1.48 0 2.77-.8 3.46-2" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 14c0 2.21 1.79 4 4 4s4-1.79 4-4-1.79-4-4-4c-1.48 0-2.77-.8-3.46 2" /></svg>`
+            };
+
+            // Utility functions
+            function shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+
+            function showStatus(message, duration = 2000) {
+                if (statusIndicator) {
+                    statusIndicator.textContent = message;
+                    statusIndicator.style.opacity = '1';
+                    statusIndicator.setAttribute('aria-live', 'polite');
+                    
+                    setTimeout(() => {
+                        statusIndicator.style.opacity = '0';
+                    }, duration);
+                }
+                console.log('Status:', message);
+            }
+
+            // Enhanced accessibility announcements
+            function announceToScreenReader(message) {
+                const announcer = document.createElement('div');
+                announcer.setAttribute('aria-live', 'polite');
+                announcer.setAttribute('aria-atomic', 'true');
+                announcer.style.cssText = 'position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;';
+                announcer.textContent = message;
+                
+                document.body.appendChild(announcer);
+                setTimeout(() => document.body.removeChild(announcer), 1000);
+            }
+
+            // Enhanced video management
+            function playNextContent() {
+                if (isTransitioning) return;
+                currentIndex = (currentIndex + 1) % videoUrls.length;
+                playContent(currentIndex);
+            }
+
+            function playContent(index) {
+                if (videoUrls.length === 0 || isTransitioning) return;
+                
+                try {
+                    isTransitioning = true;
+                    currentIndex = index % videoUrls.length;
+                    const videoUrl = videoUrls[currentIndex];
+                    
+                    // Enhanced preloading check
+                    const preloadedVideo = preloadedVideos.get(videoUrl);
+                    if (preloadedVideo && preloadedVideo.readyState >= 2) {
+                        console.log('Using preloaded video:', videoUrl);
+                        inactiveVideoElement.src = preloadedVideo.src;
+                        inactiveVideoElement.currentTime = 0;
+                        crossFade();
+                    } else {
+                        console.log('Loading new video:', videoUrl);
+                        inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
+                        inactiveVideoElement.addEventListener('error', handleVideoError, { once: true });
+                        inactiveVideoElement.src = videoUrl;
+                        inactiveVideoElement.load();
+                    }
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'playContent', index });
+                    isTransitioning = false;
+                }
+            }
+
+            function crossFade() {
+                try {
+                    needsTapToResume = false;
+                    
+                    const playPromise = inactiveVideoElement.play();
+                    if (playPromise) {
+                        playPromise.catch(e => {
+                            console.log("Playback prevented. Needs user interaction:", e);
+                            needsTapToResume = true;
+                            showStatus('Tap to enable playback', 3000);
+                        });
+                    }
+                    
+                    // Enhanced crossfade with animation monitoring
+                    inactiveVideoElement.style.opacity = 1;
+                    activeVideoElement.style.opacity = 0;
+                    
+                    setTimeout(() => {
+                        // Swap video elements
+                        [activeVideoElement, inactiveVideoElement] = [inactiveVideoElement, activeVideoElement];
+                        
+                        // Cleanup inactive video
+                        inactiveVideoElement.pause();
+                        inactiveVideoElement.currentTime = 0;
+                        
+                        // Setup event listeners
+                        setupEventListeners(activeVideoElement);
+                        updatePreloadQueue();
+                        updateProgress();
+                        
+                        isTransitioning = false;
+                        
+                        announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
+                        
+                    }, CONFIG.CROSSFADE_DURATION);
+                    
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'crossFade' });
+                    isTransitioning = false;
+                }
+            }
+
+            // Enhanced preloading with error handling
+            function startPreloading(url) {
+                if (preloadedVideos.has(url)) return;
+                
+                try {
+                    const video = document.createElement('video');
+                    video.style.display = 'none';
+                    video.src = url;
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.preload = 'auto';
+                    
+                    const loadPromise = new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            reject(new Error('Preload timeout'));
+                        }, 15000);
+                        
+                        video.addEventListener('canplaythrough', () => {
+                            clearTimeout(timeout);
+                            resolve(video);
+                        }, { once: true });
+                        
+                        video.addEventListener('error', (e) => {
+                            clearTimeout(timeout);
+                            reject(e.error || new Error('Preload failed'));
+                        }, { once: true });
+                    });
+                    
+                    document.body.appendChild(video);
+                    video.load();
+                    
+                    loadPromise.then(() => {
+                        if (!preloadedVideos.has(url)) {
+                            preloadedVideos.set(url, video);
+                            console.log('Preloaded:', url);
+                        }
+                    }).catch(error => {
+                        console.warn('Preload failed:', url, error);
+                        if (video.parentNode) {
+                            video.parentNode.removeChild(video);
+                        }
+                    });
+                    
+                } catch (error) {
+                    console.warn('Preloading setup failed:', url, error);
+                }
+            }
+
+            function updatePreloadQueue() {
+                try {
+                    const currentUrl = videoUrls[currentIndex % videoUrls.length];
+                    
+                    // Clean up old preloaded videos
+                    for (const [url, video] of preloadedVideos.entries()) {
+                        const videoIndex = videoUrls.indexOf(url);
+                        const distance = (videoIndex - currentIndex + videoUrls.length) % videoUrls.length;
+                        if (distance > preloadBufferSize && url !== currentUrl) {
+                            preloadedVideos.delete(url);
+                            if (video.parentNode) {
+                                video.parentNode.removeChild(video);
+                            }
+                        }
+                    }
+                    
+                    // Preload upcoming videos
+                    for (let i = 1; i <= preloadBufferSize; i++) {
+                        const nextIndex = (currentIndex + i) % videoUrls.length;
+                        const nextUrl = videoUrls[nextIndex];
+                        if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) {
+                            startPreloading(nextUrl);
+                        }
+                    }
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'updatePreloadQueue' });
+                }
+            }
+
+            function setupEventListeners(videoElement) {
+                if (!videoElement) return;
+                
+                // Remove existing listeners
+                videoElement.removeEventListener('ended', handleVideoEnd);
+                videoElement.removeEventListener('error', handleVideoError);
+                videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+                
+                // Add new listeners
+                videoElement.addEventListener('ended', handleVideoEnd);
+                videoElement.addEventListener('error', handleVideoError);
+                videoElement.addEventListener('timeupdate', handleTimeUpdate);
+            }
+
+            function handleVideoEnd() {
+                if (autoPlayCheckbox.checked && !isTransitioning) {
+                    playNextContent();
+                }
+            }
+
+            function handleTimeUpdate() {
+                updateProgress();
+                
+                if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
+                
+                const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
+                if (timeRemaining < 3.2 && timeRemaining > 0) {
+                    playNextContent();
+                }
+            }
+
+            function updateProgress() {
+                if (activeVideoElement && activeVideoElement.duration && progressBar) {
+                    const progress = (activeVideoElement.currentTime / activeVideoElement.duration) * 100;
+                    progressBar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+                    progressBar.setAttribute('aria-valuenow', Math.round(progress));
+                }
+            }
+
+            function handleVideoError(e) {
+                const error = e.error || e.target?.error || new Error('Video load failed');
+                errorBoundary.handleError(error, { 
+                    context: 'videoError', 
+                    src: e.target?.src || activeVideoElement?.currentSrc,
+                    readyState: e.target?.readyState 
+                });
+                
+                showStatus('Video error. Loading next...', 3000);
+                
+                // Try next video after delay
+                setTimeout(() => {
+                    if (!isTransitioning) {
+                        playNextContent();
+                    }
+                }, 1000);
+            }
+
+            function updateUI() {
+                try {
+                    const isMuted = videoA.muted;
+                    if (toggleSoundBtn) {
+                        toggleSoundBtn.innerHTML = isMuted ? ICONS.soundOff : ICONS.soundOn;
+                        toggleSoundBtn.setAttribute('aria-label', `${isMuted ? 'Unmute' : 'Mute'} sound (M)`);
+                    }
+                    
+                    if (isDesktop && fullscreenBtn) {
+                        const isFullscreen = !!document.fullscreenElement;
+                        fullscreenBtn.innerHTML = isFullscreen ? ICONS.fullscreenExit : ICONS.fullscreenEnter;
+                        fullscreenBtn.setAttribute('aria-label', `${isFullscreen ? 'Exit' : 'Enter'} fullscreen (F)`);
+                    }
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'updateUI' });
+                }
+            }
+
+            // Enhanced UI visibility with debouncing
+            const handleUIVisibility = (() => {
+                let timeout;
+                return () => {
+                    if (uiOverlay) {
+                        uiOverlay.classList.add('ui-visible');
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => {
+                            uiOverlay.classList.remove('ui-visible');
+                        }, CONFIG.UI_TIMEOUT);
+                    }
+                };
+            })();
+
+            function setLooping() {
+                const shouldLoop = !autoPlayCheckbox.checked;
+                videoA.loop = shouldLoop;
+                videoB.loop = shouldLoop;
+            }
+
+            function toggleSound(showFeedback = false) {
+                try {
+                    const isMuted = !videoA.muted;
+                    videoA.muted = isMuted;
+                    videoB.muted = isMuted;
+
+                    if (!isMuted && activeVideoElement) {
+                        const playPromise = activeVideoElement.play();
+                        if (playPromise) {
+                            playPromise.catch(error => {
+                                console.log("Playback prevented. Needs user interaction.");
+                                needsTapToResume = true;
+                                showStatus('Tap to enable sound', 2000);
+                            });
+                        }
+                    }
+
+                    updateUI();
+                    userPreferences.save();
+                    
+                    if (showFeedback) {
+                        showGestureFeedback('sound', isMuted ? 'Off' : 'On');
+                    }
+                    
+                    announceToScreenReader(`Sound ${isMuted ? 'muted' : 'unmuted'}`);
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'toggleSound' });
+                }
+            }
+
+            function toggleAutoplay(showFeedback = false) {
+                try {
+                    autoPlayCheckbox.checked = !autoPlayCheckbox.checked;
+                    setLooping();
+                    userPreferences.save();
+                    
+                    if (showFeedback) {
+                        showGestureFeedback('autoplay', autoPlayCheckbox.checked ? 'On' : 'Off');
+                    }
+                    
+                    announceToScreenReader(`Autoplay ${autoPlayCheckbox.checked ? 'enabled' : 'disabled'}`);
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'toggleAutoplay' });
+                }
+            }
+
+            function showGestureFeedback(mode, status) {
+                if (!gestureFeedback || !gestureIcon || !gestureText) return;
+                
+                try {
+                    let iconHtml = '';
+                    if (mode === 'sound') {
+                        iconHtml = (videoA.muted ? ICONS.soundOff : ICONS.soundOn).replace('h-6 w-6', 'h-16 w-16');
+                    } else {
+                        iconHtml = ICONS.autoplay;
+                    }
+                    
+                    gestureIcon.innerHTML = iconHtml;
+                    gestureText.textContent = `${mode.charAt(0).toUpperCase() + mode.slice(1)} ${status}`;
+                    
+                    gestureFeedback.classList.add('visible');
+                    
+                    setTimeout(() => {
+                        gestureFeedback.classList.remove('visible');
+                    }, 1000);
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'showGestureFeedback' });
+                }
+            }
+
+            function toggleFullscreen() {
+                try {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(e => {
+                            console.warn('Fullscreen request failed:', e);
+                            announceToScreenReader('Fullscreen not available');
+                        });
+                    } else {
+                        document.exitFullscreen().catch(e => {
+                            console.warn('Exit fullscreen failed:', e);
+                        });
+                    }
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'toggleFullscreen' });
+                }
+            }
+
+            function openLinkedIn() {
+                try {
+                    const profileUrl = 'https://www.linkedin.com/in/carlos-escobar-32156b24/';
+                    const appUrl = 'linkedin://in/carlos-escobar-32156b24';
+
+                    if (!isDesktop) {
+                        window.location.href = appUrl;
+                        setTimeout(() => {
+                            window.open(profileUrl, '_blank', 'noopener,noreferrer');
+                        }, 2500);
+                    } else {
+                        window.open(profileUrl, '_blank', 'noopener,noreferrer');
+                    }
+                    
+                    announceToScreenReader('Opening LinkedIn profile');
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'openLinkedIn' });
+                }
+            }
+
+            // Enhanced initialization
+            function init() {
+                try {
+                    showStatus("Initializing Dreams and Poems...");
+                    console.log('🎬 Starting Dreams and Poems v2.0...');
+                    
+                    // Load user preferences
+                    userPreferences.load();
+                    
+                    // Determine device type and buffer size
+                    isDesktop = window.matchMedia("(min-width: 769px)").matches;
+                    preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
+                    
+                    // Select appropriate video URLs
+                    const sourceUrls = isDesktop ? CONFIG.videoUrls.desktop : CONFIG.videoUrls.mobile;
+                    if (!sourceUrls || sourceUrls.length === 0) {
+                        throw new Error(`No video URLs available for ${isDesktop ? 'desktop' : 'mobile'}`);
+                    }
+                    
+                    videoUrls = shuffleArray(sourceUrls);
+                    console.log(`✅ Loaded ${videoUrls.length} ${isDesktop ? 'desktop' : 'mobile'} videos`);
+
+                    // Setup About link
+                    if (aboutLink) {
+                        aboutLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            openLinkedIn();
+                        });
+                    }
+
+                    // Device-specific initialization
+                    if (isDesktop) {
+                        initializeDesktop();
+                    } else {
+                        initializeMobile();
+                    }
+
+                    // Common event listeners
+                    if (autoPlayCheckbox) {
+                        autoPlayCheckbox.addEventListener('change', () => {
+                            setLooping();
+                            userPreferences.save();
+                        });
+                    }
+
+                    // Window events
+                    window.addEventListener('resize', () => {
+                        const newIsDesktop = window.matchMedia("(min-width: 769px)").matches;
+                        if (newIsDesktop !== isDesktop) {
+                            isDesktop = newIsDesktop;
+                            // Reinitialize for new device type
+                            setTimeout(init, 100);
+                        }
+                    });
+
+                    // Page visibility handling
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.hidden && activeVideoElement && !activeVideoElement.paused) {
+                            activeVideoElement.pause();
+                            wasPausedByHold = true;
+                        } else if (!document.hidden && wasPausedByHold) {
+                            activeVideoElement.play().catch(e => console.log('Resume failed:', e));
+                            wasPausedByHold = false;
+                        }
+                    });
+
+                    // Start playing
+                    showStatus("Loading first video...", 1500);
+                    currentIndex = Math.floor(Math.random() * videoUrls.length);
+                    
+                    activeVideoElement.src = videoUrls[currentIndex];
+                    const playPromise = activeVideoElement.play();
+                    
+                    if (playPromise) {
+                        playPromise.then(() => {
+                            console.log('✅ Initial video started');
+                            setupEventListeners(activeVideoElement);
+                            updateUI();
+                            setLooping();
+                            
+                            // Start preloading after initial video loads
+                            setTimeout(() => {
+                                updatePreloadQueue();
+                            }, 2000);
+                            
+                            showStatus("Ready to play!", 2000);
+                            announceToScreenReader('Dreams and Poems video player ready');
+                            
+                        }).catch(e => {
+                            console.error("Initial playback error:", e);
+                            needsTapToResume = true;
+                            showStatus('Tap anywhere to start playing', 5000);
+                        });
+                    }
+
+                } catch (error) {
+                    errorBoundary.handleError(error, { context: 'initialization' });
+                    showStatus('Initialization failed. Retrying...', 3000);
+                    setTimeout(init, 2000);
+                }
+            }
+
+            function initializeDesktop() {
+                console.log('🖥️ Initializing desktop features...');
+                
+                // Desktop controls
+                if (toggleSoundBtn) {
+                    toggleSoundBtn.addEventListener('click', () => toggleSound());
+                }
+                
+                if (fullscreenBtn) {
+                    fullscreenBtn.addEventListener('click', toggleFullscreen);
+                    document.addEventListener('fullscreenchange', updateUI);
+                }
+                
+                // Mouse interactions
+                if (videoContainer) {
+                    videoContainer.addEventListener('mousemove', handleUIVisibility);
+                    videoContainer.addEventListener('mouseenter', handleUIVisibility);
+                    
+                    videoContainer.addEventListener('mousedown', () => {
+                        if (activeVideoElement) activeVideoElement.pause();
+                    });
+                    
+                    videoContainer.addEventListener('mouseup', () => {
+                        if (activeVideoElement) {
+                            activeVideoElement.play().catch(e => console.log('Resume failed:', e));
+                        }
+                    });
+                }
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    if (e.target.tagName === 'INPUT') return;
+                    
+                    switch (e.code) {
+                        case 'KeyM':
+                            toggleSound();
+                            e.preventDefault();
+                            break;
+                        case 'KeyF':
+                            toggleFullscreen();
+                            e.preventDefault();
+                            break;
+                        case 'KeyA':
+                            toggleAutoplay();
+                            e.preventDefault();
+                            break;
+                        case 'Space':
+                            if (activeVideoElement) {
+                                if (activeVideoElement.paused) {
+                                    activeVideoElement.play();
+                                } else {
+                                    activeVideoElement.pause();
+                                }
+                            }
+                            e.preventDefault();
+                            break;
+                        case 'ArrowRight':
+                            playNextContent();
+                            e.preventDefault();
+                            break;
+                        case 'ArrowLeft':
+                            currentIndex = (currentIndex - 1 + videoUrls.length) % videoUrls.length;
+                            playContent(currentIndex);
+                            e.preventDefault();
+                            break;
+                    }
+                });
+            }
+
+            function initializeMobile() {
+                console.log('📱 Initializing mobile features...');
+                
+                // Ensure videos are muted for autoplay
+                videoA.muted = videoB.muted = true;
+                
+                // Touch interactions
+                if (videoContainer) {
+                    videoContainer.addEventListener('touchstart', (e) => {
+                        const touch = e.touches[0];
+                        touchStartX = touch.clientX;
+                        touchStartY = touch.clientY;
+                        wasPausedByHold = false;
+                        
+                        holdTimeout = setTimeout(() => {
+                            if (activeVideoElement) {
+                                activeVideoElement.pause();
+                                wasPausedByHold = true;
+                            }
+                        }, 300);
+                    }, { passive: true });
+                    
+                    videoContainer.addEventListener('touchmove', (e) => {
+                        const touch = e.touches[0];
+                        const deltaX = Math.abs(touch.clientX - touchStartX);
+                        const deltaY = Math.abs(touch.clientY - touchStartY);
+                        
+                        if (deltaX > 10 || deltaY > 10) {
+                            clearTimeout(holdTimeout);
+                        }
+                    }, { passive: true });
+                    
+                    videoContainer.addEventListener('touchend', (e) => {
+                        clearTimeout(holdTimeout);
+                        
+                        if (wasPausedByHold) {
+                            if (activeVideoElement) {
+                                activeVideoElement.play().catch(e => console.log('Resume failed:', e));
+                            }
+                            return;
+                        }
+                        
+                        if (needsTapToResume) {
+                            if (activeVideoElement) {
+                                activeVideoElement.play().then(() => {
+                                    needsTapToResume = false;
+                                    showStatus('Playback started!', 1000);
+                                }).catch(err => {
+                                    console.error("Resume failed:", err);
+                                    showStatus('Tap again to enable playback', 3000);
+                                });
+                            }
+                            return;
+                        }
+                        
+                        handleUIVisibility();
+                        
+                        const touch = e.changedTouches[0];
+                        const deltaX = touch.clientX - touchStartX;
+                        const deltaY = touch.clientY - touchStartY;
+                        
+                        if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                            // Horizontal swipe
+                            if (mobileControlMode === 'sound') {
+                                toggleSound(true);
+                            } else {
+                                toggleAutoplay(true);
+                            }
+                        } else if (Math.abs(deltaY) > 50) {
+                            // Vertical swipe - switch control mode
+                            mobileControlMode = mobileControlMode === 'sound' ? 'autoplay' : 'sound';
+                            showGestureFeedback('mode', `${mobileControlMode} control`);
+                            userPreferences.save();
+                        }
+                    }, { passive: true });
+                }
+            }
+
+            // Start the application
+            init();
+            
+            // Make app available globally for debugging
+            window.dreamsAndPoemsApp = {
+                videoUrls,
+                currentIndex,
+                activeVideoElement,
+                preloadedVideos,
+                errorBoundary,
+                userPreferences,
+                toggleSound,
+                toggleAutoplay,
+                playNextContent,
+                playContent,
+                getStatus: () => ({
+                    currentIndex,
+                    totalVideos: videoUrls.length,
+                    isPlaying: activeVideoElement && !activeVideoElement.paused,
+                    muted: videoA.muted,
+                    autoplay: autoPlayCheckbox.checked,
+                    preloadedCount: preloadedVideos.size,
+                    errors: errorBoundary.errors.length
+                })
+            };
+            
+            console.log('✅ Dreams and Poems v2.0 initialized successfully!');
         });
     </script>
     
