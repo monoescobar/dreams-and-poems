@@ -86,7 +86,8 @@
         }
 
         .about-link,
-        .portfolio-link {
+        .portfolio-link,
+        .version-link {
             position: fixed;
             bottom: 20px;
             padding: 10px;
@@ -108,8 +109,13 @@
             left: 20px;
         }
 
+        .version-link {
+            right: 90px;
+        }
+
         .ui-visible .about-link,
-        .ui-visible .portfolio-link {
+        .ui-visible .portfolio-link,
+        .ui-visible .version-link {
             opacity: 0.2;
         }
 
@@ -225,7 +231,8 @@
             }
 
             .ui-visible .about-link,
-            .ui-visible .portfolio-link {
+            .ui-visible .portfolio-link,
+            .ui-visible .version-link {
                 opacity: 1;
                 /* Make fully visible on mobile interaction */
             }
@@ -262,6 +269,7 @@
             class="about-link">About</a>
         <a href="https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Carlos_Escobar.pdf" target="_blank" id="portfolio-link"
             class="portfolio-link">Portfolio</a>
+        <span id="version-number" class="version-link">v001</span>
         <div id="gesture-feedback">
             <div id="gesture-icon"></div>
             <div id="gesture-text"></div>
