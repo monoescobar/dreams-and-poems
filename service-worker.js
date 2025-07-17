@@ -169,12 +169,21 @@ async function handleStaticFile(request) {
 }
 
 /**
- * Handle video file requests with smart caching
+ * Handle video file requests with Range support for streaming
  * @param {Request} request - Request object
  * @returns {Promise<Response>} Response promise
  */
 async function handleVideoFile(request) {
   try {
+    // Check for Range header (video streaming)
+    const range = request.headers.get('range');
+    
+    if (range) {
+      // For range requests, always go to network for proper streaming
+      console.log('Service Worker: Handling video range request', request.url);
+      return fetch(request);
+    }
+    
     const cache = await caches.open(DYNAMIC_CACHE_NAME);
     const cachedResponse = await cache.match(request);
     
@@ -183,12 +192,12 @@ async function handleVideoFile(request) {
       const networkResponse = await fetch(request);
       
       if (networkResponse.ok) {
-        // Only cache smaller video files or partial content
+        // Only cache smaller video files or metadata
         const contentLength = networkResponse.headers.get('content-length');
-        const shouldCache = !contentLength || parseInt(contentLength) < 50 * 1024 * 1024; // 50MB limit
+        const shouldCache = !contentLength || parseInt(contentLength) < 10 * 1024 * 1024; // 10MB limit for better performance
         
         if (shouldCache) {
-          // Manage cache size
+          // Manage cache size more aggressively for videos
           await limitCacheSize(DYNAMIC_CACHE_NAME, MAX_VIDEO_CACHE_SIZE);
           
           // Cache the response

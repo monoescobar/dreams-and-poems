@@ -51,6 +51,10 @@
     <link rel="preconnect" href="https://filedn.com">
     <link rel="dns-prefetch" href="https://filedn.com">
     
+    <!-- Preload critical resources -->
+    <link rel="preload" href="src/styles/main.css" as="style">
+    <link rel="preload" href="video-urls.js" as="script">
+    
     <!-- Load external CSS and JS -->
     <link rel="stylesheet" href="src/styles/main.css">
     <script src="video-urls.js"></script>
@@ -333,7 +337,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v017">v017</span>
+            <span class="desktop-version-number" aria-label="Application version v018">v018</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -347,7 +351,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v017">v017</span>
+        <span class="mobile-version-number" aria-label="Application version v018">v018</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -373,8 +377,8 @@
             
             // Configuration
             const CONFIG = {
-                PRELOAD_BUFFER_SIZE_DESKTOP: 3,
-                PRELOAD_BUFFER_SIZE_MOBILE: 2,  // Increased for better mobile performance
+                PRELOAD_BUFFER_SIZE_DESKTOP: 2, // Reduced from 3
+                PRELOAD_BUFFER_SIZE_MOBILE: 1,  // Reduced from 2 for better memory usage
                 CROSSFADE_DURATION: 1500,
                 CROSSFADE_DURATION_MOBILE: 800, // Faster mobile transitions
                 UI_TIMEOUT: 3000,
@@ -518,6 +522,60 @@
             let isTransitioning = false;
             const preloadedVideos = new Map();
             let needsTapToResume = false;
+            
+            // Add memory limits after isDesktop is defined
+            CONFIG.MAX_PRELOAD_MEMORY = isDesktop ? 150 * 1024 * 1024 : 50 * 1024 * 1024; // Memory limits
+            
+            // Performance monitoring
+            const performanceMonitor = {
+                memoryUsage: 0,
+                lastCleanup: Date.now(),
+                metrics: {
+                    frameDrops: 0,
+                    loadTimes: [],
+                    memoryPressure: false
+                },
+                
+                checkMemory() {
+                    if (performance.memory) {
+                        this.memoryUsage = performance.memory.usedJSHeapSize;
+                        this.metrics.memoryPressure = this.memoryUsage > CONFIG.MAX_PRELOAD_MEMORY;
+                        
+                        if (this.metrics.memoryPressure) {
+                            console.warn('Memory pressure detected, cleaning up preloaded videos');
+                            this.aggressiveCleanup();
+                        }
+                    }
+                },
+                
+                aggressiveCleanup() {
+                    const currentUrl = videoUrls[currentIndex % videoUrls.length];
+                    let cleanedCount = 0;
+                    
+                    for (const [url, video] of preloadedVideos.entries()) {
+                        if (url !== currentUrl) {
+                            preloadedVideos.delete(url);
+                            if (video.parentNode) {
+                                video.parentNode.removeChild(video);
+                            }
+                            cleanedCount++;
+                        }
+                    }
+                    
+                    console.log(`Cleaned up ${cleanedCount} preloaded videos due to memory pressure`);
+                    
+                    // Force garbage collection if available
+                    if (window.gc) {
+                        window.gc();
+                    }
+                    
+                    this.lastCleanup = Date.now();
+                },
+                
+                shouldPreload() {
+                    return !this.metrics.memoryPressure && preloadedVideos.size < preloadBufferSize;
+                }
+            };
 
             // Enhanced user preferences
             const userPreferences = {
@@ -660,27 +718,42 @@
                     // Use faster crossfade duration on mobile
                     const crossfadeDuration = isDesktop ? CONFIG.CROSSFADE_DURATION : CONFIG.CROSSFADE_DURATION_MOBILE;
                     
-                    // Enhanced crossfade with animation monitoring
-                    inactiveVideoElement.style.opacity = 1;
-                    activeVideoElement.style.opacity = 0;
+                    // Enhanced crossfade with requestAnimationFrame for smooth animation
+                    const startTime = performance.now();
                     
-                    setTimeout(() => {
-                        // Swap video elements
-                        [activeVideoElement, inactiveVideoElement] = [inactiveVideoElement, activeVideoElement];
+                    const animateCrossfade = (currentTime) => {
+                        const elapsed = currentTime - startTime;
+                        const progress = Math.min(elapsed / crossfadeDuration, 1);
                         
-                        // Cleanup inactive video
-                        inactiveVideoElement.pause();
-                        inactiveVideoElement.currentTime = 0;
+                        // Use easing function for smoother transition
+                        const easeProgress = progress < 0.5 
+                            ? 2 * progress * progress 
+                            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
                         
-                        // Setup event listeners
-                        setupEventListeners(activeVideoElement);
-                        updatePreloadQueue();
+                        inactiveVideoElement.style.opacity = easeProgress;
+                        activeVideoElement.style.opacity = 1 - easeProgress;
                         
-                        isTransitioning = false;
-                        
-                        announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
-                        
-                    }, crossfadeDuration);
+                        if (progress < 1) {
+                            requestAnimationFrame(animateCrossfade);
+                        } else {
+                            // Crossfade complete - swap elements
+                            [activeVideoElement, inactiveVideoElement] = [inactiveVideoElement, activeVideoElement];
+                            
+                            // Cleanup inactive video
+                            inactiveVideoElement.pause();
+                            inactiveVideoElement.currentTime = 0;
+                            
+                            // Setup event listeners
+                            setupEventListeners(activeVideoElement);
+                            updatePreloadQueue();
+                            
+                            isTransitioning = false;
+                            
+                            announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
+                        }
+                    };
+                    
+                    requestAnimationFrame(animateCrossfade);
                     
                 } catch (error) {
                     errorBoundary.handleError(error, { context: 'crossFade' });
@@ -688,9 +761,16 @@
                 }
             }
 
-            // Enhanced preloading with error handling
+            // Enhanced preloading with error handling and memory management
             function startPreloading(url) {
                 if (preloadedVideos.has(url)) return;
+                
+                // Check memory before preloading
+                performanceMonitor.checkMemory();
+                if (!performanceMonitor.shouldPreload()) {
+                    console.log('Skipping preload due to memory pressure or buffer full');
+                    return;
+                }
                 
                 try {
                     const video = document.createElement('video');
@@ -698,7 +778,11 @@
                     video.src = url;
                     video.muted = true;
                     video.playsInline = true;
-                    video.preload = 'auto';
+                    video.preload = 'metadata'; // Changed from 'auto' to reduce memory usage
+                    
+                    // Add GPU acceleration to preloaded videos
+                    video.style.transform = 'translateZ(0)';
+                    video.style.backfaceVisibility = 'hidden';
                     
                     // Use shorter timeout on mobile for faster fallback
                     const timeoutDuration = isDesktop ? 15000 : 10000;
@@ -743,11 +827,18 @@
                 try {
                     const currentUrl = videoUrls[currentIndex % videoUrls.length];
                     
-                    // Clean up old preloaded videos
+                    // Check memory and clean up if needed
+                    performanceMonitor.checkMemory();
+                    
+                    // Clean up old preloaded videos with distance-based priority
                     for (const [url, video] of preloadedVideos.entries()) {
                         const videoIndex = videoUrls.indexOf(url);
                         const distance = (videoIndex - currentIndex + videoUrls.length) % videoUrls.length;
-                        if (distance > preloadBufferSize && url !== currentUrl) {
+                        
+                        // More aggressive cleanup based on memory pressure
+                        const maxDistance = performanceMonitor.metrics.memoryPressure ? 1 : preloadBufferSize;
+                        
+                        if (distance > maxDistance && url !== currentUrl) {
                             preloadedVideos.delete(url);
                             if (video.parentNode) {
                                 video.parentNode.removeChild(video);
@@ -755,12 +846,15 @@
                         }
                     }
                     
-                    // Preload upcoming videos
-                    for (let i = 1; i <= preloadBufferSize; i++) {
-                        const nextIndex = (currentIndex + i) % videoUrls.length;
-                        const nextUrl = videoUrls[nextIndex];
-                        if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) {
-                            startPreloading(nextUrl);
+                    // Preload upcoming videos only if memory allows
+                    if (performanceMonitor.shouldPreload()) {
+                        for (let i = 1; i <= preloadBufferSize; i++) {
+                            const nextIndex = (currentIndex + i) % videoUrls.length;
+                            const nextUrl = videoUrls[nextIndex];
+                            if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) {
+                                startPreloading(nextUrl);
+                                break; // Only preload one at a time to avoid memory spikes
+                            }
                         }
                     }
                 } catch (error) {
@@ -1109,6 +1203,11 @@
                             
                             setTimeout(() => {
                                 updatePreloadQueue();
+                                
+                                // Start periodic memory monitoring
+                                setInterval(() => {
+                                    performanceMonitor.checkMemory();
+                                }, 30000); // Check every 30 seconds
                             }, 2000);
                             
                             showStatus("Playing automatically!", 2000);
@@ -1242,61 +1341,79 @@
                 
                 // Touch interactions for video navigation and sound toggle
                 if (videoContainer) {
+                    // Debounced touch handling for better performance
+                    let touchDebounceTimer = null;
+                    let lastTouchTime = 0;
+                    const TOUCH_DEBOUNCE_DELAY = 150; // ms
+                    
                     videoContainer.addEventListener('touchstart', (e) => {
                         handleUIVisibility();
-                    }, { passive: true });
+                    }, { passive: true, capture: false });
                     
                     videoContainer.addEventListener('touchend', (e) => {
-                        // Get touch position
-                        const touch = e.changedTouches[0];
-                        const touchX = touch.clientX;
-                        const touchY = touch.clientY;
+                        const currentTime = performance.now();
+                        if (currentTime - lastTouchTime < TOUCH_DEBOUNCE_DELAY) {
+                            return; // Ignore rapid touches
+                        }
+                        lastTouchTime = currentTime;
                         
-                        // Check if touch is on excluded elements (autoplay toggle, about, portfolio)
-                        const elementAtTouch = document.elementFromPoint(touchX, touchY);
+                        // Clear any pending touch actions
+                        if (touchDebounceTimer) {
+                            clearTimeout(touchDebounceTimer);
+                        }
                         
-                        // Define excluded elements and their containers
-                        const excludedSelectors = [
-                            '.mobile-toggle-switch',
-                            '.mobile-toggle-icon', 
-                            '#mobile-auto-play-checkbox',
-                            '.about-link',
-                            '.portfolio-link',
-                            '#about-link',
-                            '#portfolio-link'
-                        ];
-                        
-                        let shouldExclude = false;
-                        for (const selector of excludedSelectors) {
-                            if (elementAtTouch?.closest(selector) || elementAtTouch?.matches(selector)) {
-                                shouldExclude = true;
-                                break;
+                        touchDebounceTimer = setTimeout(() => {
+                            // Get touch position
+                            const touch = e.changedTouches[0];
+                            const touchX = touch.clientX;
+                            const touchY = touch.clientY;
+                            
+                            // Check if touch is on excluded elements (autoplay toggle, about, portfolio)
+                            const elementAtTouch = document.elementFromPoint(touchX, touchY);
+                            
+                            // Define excluded elements and their containers
+                            const excludedSelectors = [
+                                '.mobile-toggle-switch',
+                                '.mobile-toggle-icon', 
+                                '#mobile-auto-play-checkbox',
+                                '.about-link',
+                                '.portfolio-link',
+                                '#about-link',
+                                '#portfolio-link'
+                            ];
+                            
+                            let shouldExclude = false;
+                            for (const selector of excludedSelectors) {
+                                if (elementAtTouch?.closest(selector) || elementAtTouch?.matches(selector)) {
+                                    shouldExclude = true;
+                                    break;
+                                }
                             }
-                        }
-                        
-                        // Handle tap-to-resume if needed
-                        if (needsTapToResume && !shouldExclude) {
-                            if (activeVideoElement) {
-                                activeVideoElement.play().then(() => {
-                                    needsTapToResume = false;
-                                    showStatus('Playback started!', 1000);
-                                }).catch(err => {
-                                    console.error("Resume failed:", err);
-                                    showStatus('Tap again to enable playback', 3000);
-                                });
+                            
+                            // Handle tap-to-resume if needed
+                            if (needsTapToResume && !shouldExclude) {
+                                if (activeVideoElement) {
+                                    activeVideoElement.play().then(() => {
+                                        needsTapToResume = false;
+                                        showStatus('Playback started!', 1000);
+                                    }).catch(err => {
+                                        console.error("Resume failed:", err);
+                                        showStatus('Tap again to enable playback', 3000);
+                                    });
+                                }
+                                return;
                             }
-                            return;
-                        }
-                        
-                        // Toggle sound if not touching excluded elements
-                        if (!shouldExclude) {
-                            console.log('📱 Touch detected, toggling sound');
-                            toggleSound(true); // Show visual feedback
-                        }
-                        
-                        // Always show controls on tap
-                        handleUIVisibility();
-                    }, { passive: true });
+                            
+                            // Toggle sound if not touching excluded elements
+                            if (!shouldExclude) {
+                                console.log('📱 Touch detected, toggling sound');
+                                toggleSound(true); // Show visual feedback
+                            }
+                            
+                            // Always show controls on tap
+                            handleUIVisibility();
+                        }, 50); // Small delay for better responsiveness
+                    }, { passive: true, capture: false });
                     
                     // Prevent context menu on long press
                     videoContainer.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -1325,8 +1442,30 @@
                     muted: videoA.muted,
                     autoplay: autoPlayCheckbox.checked,
                     preloadedCount: preloadedVideos.size,
-                    errors: errorBoundary.errors.length
-                })
+                    errors: errorBoundary.errors.length,
+                    performance: {
+                        memoryUsage: performanceMonitor.memoryUsage,
+                        memoryPressure: performanceMonitor.metrics.memoryPressure,
+                        lastCleanup: performanceMonitor.lastCleanup,
+                        frameDrops: performanceMonitor.metrics.frameDrops
+                    }
+                }),
+                
+                // Performance monitoring methods
+                getPerformanceReport: () => ({
+                    memory: performance.memory ? {
+                        used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
+                        total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB',
+                        limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + 'MB'
+                    } : 'Not available',
+                    preloaded: Array.from(preloadedVideos.keys()).map(url => url.split('/').pop()),
+                    bufferHealth: `${preloadedVideos.size}/${preloadBufferSize}`,
+                    deviceType: isDesktop ? 'Desktop' : 'Mobile',
+                    errors: errorBoundary.errors.slice(-5) // Last 5 errors
+                }),
+                
+                // Force cleanup for debugging
+                forceCleanup: () => performanceMonitor.aggressiveCleanup()
             };
             
             console.log('✅ Dreams and Poems v2.0 initialized successfully!');

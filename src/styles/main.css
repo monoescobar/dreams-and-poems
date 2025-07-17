@@ -71,6 +71,8 @@ body {
   overflow: hidden;
   cursor: pointer;
   background: var(--primary-bg);
+  contain: layout style paint; /* Performance isolation */
+  transform: translateZ(0); /* Force GPU layer */
 }
 
 .video-player {
@@ -81,11 +83,13 @@ body {
   min-height: 100%;
   width: auto;
   height: auto;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0); /* GPU acceleration */
   object-fit: cover;
   transition: opacity var(--transition-slow);
   pointer-events: none;
-  will-change: opacity;
+  will-change: opacity, transform;
+  backface-visibility: hidden; /* Prevent flickering */
+  contain: layout style paint; /* Performance isolation */
 }
 
 /* Mobile video adjustments - always full screen, crop if needed */
