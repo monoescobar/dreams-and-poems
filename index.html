@@ -333,7 +333,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v015">v015</span>
+            <span class="desktop-version-number" aria-label="Application version v016">v016</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -348,7 +348,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v015">v015</span>
+        <span class="mobile-version-number" aria-label="Application version v016">v016</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -1249,14 +1249,32 @@
                 
                 // Mobile sound button
                 if (mobileToggleSoundBtn) {
-                    // Set initial icon for mobile sound button
-                    const initialIcon = videoA.muted ? ICONS.soundOff : ICONS.soundOn;
+                    // Set initial icon for mobile sound button with fallback
+                    console.log('📱 Setting up mobile sound button icon...');
+                    
+                    // Ensure ICONS are available
+                    const soundOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
+                    const soundOnIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
+                    
+                    // Use direct icons instead of ICONS object to avoid timing issues
+                    const initialIcon = videoA.muted ? soundOffIcon : soundOnIcon;
                     mobileToggleSoundBtn.innerHTML = initialIcon;
                     mobileToggleSoundBtn.setAttribute('aria-label', `${videoA.muted ? 'Unmute' : 'Mute'} sound`);
+                    
+                    console.log('📱 Mobile sound button icon set:', videoA.muted ? 'muted' : 'unmuted');
                     
                     mobileToggleSoundBtn.addEventListener('click', () => {
                         toggleSound(true);
                     });
+                    
+                    // Additional fallback to ensure icon appears
+                    setTimeout(() => {
+                        if (mobileToggleSoundBtn && (!mobileToggleSoundBtn.innerHTML || mobileToggleSoundBtn.innerHTML.trim() === '')) {
+                            console.log('📱 Applying fallback icon for mobile sound button');
+                            const fallbackIcon = videoA.muted ? soundOffIcon : soundOnIcon;
+                            mobileToggleSoundBtn.innerHTML = fallbackIcon;
+                        }
+                    }, 500);
                 }
                 
                 // Simple touch interactions for video navigation (tap to show controls)
