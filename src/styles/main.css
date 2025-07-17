@@ -71,8 +71,10 @@ body {
   overflow: hidden;
   cursor: pointer;
   background: var(--primary-bg);
-  contain: layout style paint; /* Performance isolation */
+  contain: strict; /* Stronger performance isolation */
   transform: translateZ(0); /* Force GPU layer */
+  isolation: isolate; /* Create stacking context */
+  will-change: auto; /* Let browser optimize */
 }
 
 .video-player {
@@ -85,11 +87,20 @@ body {
   height: auto;
   transform: translate3d(-50%, -50%, 0); /* GPU acceleration */
   object-fit: cover;
-  transition: opacity var(--transition-slow);
+  transition: opacity var(--transition-slow) ease-out;
   pointer-events: none;
-  will-change: opacity, transform;
+  will-change: opacity;
   backface-visibility: hidden; /* Prevent flickering */
   contain: layout style paint; /* Performance isolation */
+  /* Enhanced GPU optimizations */
+  -webkit-transform: translate3d(-50%, -50%, 0);
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  /* Optimize for mobile GPUs */
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
+  /* Custom properties for crossfade animations */
+  --crossfade-opacity: 1;
 }
 
 /* Mobile video adjustments - always full screen, crop if needed */
@@ -98,11 +109,73 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+  }
+  
+  .video-player {
+    /* Enhanced mobile GPU optimization */
+    -webkit-transform: translate3d(-50%, -50%, 0);
+    transform: translate3d(-50%, -50%, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    /* Reduce transition duration on mobile for better performance */
+    transition: opacity var(--transition-medium) ease-out;
+  }
+}
+
+/* Performance-optimized utility classes */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: auto;
+}
+
+.crossfade-optimized {
+  will-change: opacity;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.performance-isolated {
+  contain: strict;
+  isolation: isolate;
+}
+
+/* Enhanced transition classes for crossfades */
+.video-crossfade-enter {
+  opacity: 0;
+  transform: translate3d(-50%, -50%, 0.1px);
+}
+
+.video-crossfade-enter-active {
+  opacity: 1;
+  transform: translate3d(-50%, -50%, 0);
+  transition: opacity var(--crossfade-duration, 1.5s) cubic-bezier(0.4, 0, 0.2, 1),
+              transform var(--crossfade-duration, 1.5s) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.video-crossfade-exit {
+  opacity: 1;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.video-crossfade-exit-active {
+  opacity: 0;
+  transform: translate3d(-50%, -50%, -0.1px);
+  transition: opacity var(--crossfade-duration, 1.5s) cubic-bezier(0.4, 0, 0.2, 1),
+              transform var(--crossfade-duration, 1.5s) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced mobile optimizations for better performance on smaller screens */
+@media (max-width: 768px) {
+  html, body {
     position: fixed;
     top: 0;
     left: 0;
     margin: 0;
     padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
   }
   
   #video-container {
