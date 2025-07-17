@@ -3,7 +3,6 @@
  * Advanced UI management with accessibility, responsive design, and enhanced UX
  * Auto-hide UI after 3 seconds of inactivity
  * 
- * @version 006
  * @author Carlos Escobar
  */
 
@@ -67,7 +66,7 @@ export class UIController {
   validateElements() {
     const required = [
       'videoContainer', 'uiOverlay', 'toggleSoundBtn', 
-      'autoPlayCheckbox', 'progressBar', 'gestureFeedback'
+      'autoPlayCheckbox', 'gestureFeedback'
     ];
     
     const missing = required.filter(key => !this.elements[key]);
@@ -92,9 +91,6 @@ export class UIController {
     
     // Setup autoplay toggle
     this.setupAutoplayToggle();
-    
-    // Setup progress bar
-    this.setupProgressBar();
     
     // Setup gesture feedback
     this.setupGestureFeedback();
@@ -140,17 +136,6 @@ export class UIController {
         this.savePreference('autoplay', checkbox.checked);
       });
     }
-  }
-
-  /**
-   * Setup progress bar with accessibility
-   */
-  setupProgressBar() {
-    this.elements.progressBar.setAttribute('role', 'progressbar');
-    this.elements.progressBar.setAttribute('aria-label', 'Video progress');
-    this.elements.progressBar.setAttribute('aria-valuemin', '0');
-    this.elements.progressBar.setAttribute('aria-valuemax', '100');
-    this.elements.progressBar.setAttribute('aria-valuenow', '0');
   }
 
   /**
@@ -683,24 +668,6 @@ export class UIController {
       
       this.elements.fullscreenBtn.setAttribute('aria-label', 
         `${this.state.fullscreen ? 'Exit' : 'Enter'} fullscreen (F)`);
-    }
-  }
-
-  /**
-   * Update progress bar
-   * @param {number} progress - Progress percentage (0-100)
-   * @param {number} currentTime - Current time in seconds
-   * @param {number} duration - Total duration in seconds
-   */
-  updateProgress(progress, currentTime = 0, duration = 0) {
-    if (this.elements.progressBar) {
-      this.elements.progressBar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
-      this.elements.progressBar.setAttribute('aria-valuenow', progress.toString());
-      
-      if (duration > 0) {
-        const timeText = `${Math.floor(currentTime)} of ${Math.floor(duration)} seconds`;
-        this.elements.progressBar.setAttribute('aria-valuetext', timeText);
-      }
     }
   }
 

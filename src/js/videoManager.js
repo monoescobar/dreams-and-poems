@@ -2,7 +2,6 @@
  * Dreams and Poems - Video Manager
  * Advanced video management with preloading, error handling, and performance optimization
  * 
- * @version 2.0.0
  * @author Carlos Escobar
  */
 

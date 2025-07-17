@@ -18,15 +18,19 @@
     <meta property="og:url" content="https://github.com/monoescobar/dreams-and-poems">
     <meta property="og:title" content="Dreams and Poems ✨">
     <meta property="og:description" content="An immersive visual poetry experience combining abstract video content with interactive storytelling.">
+    <meta property="og:image" content="icon-512x512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://github.com/monoescobar/dreams-and-poems">
     <meta property="twitter:title" content="Dreams and Poems ✨">
     <meta property="twitter:description" content="An immersive visual poetry experience combining abstract video content with interactive storytelling.">
+    <meta property="twitter:image" content="icon-512x512.png">
     
     <!-- PWA Manifest and Meta Tags -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=008">
     
     <!-- iOS Safari PWA support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -121,6 +125,153 @@
             z-index: 1000;
             opacity: 1;
             transition: opacity 0.3s ease;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .mobile-loading.visible {
+            opacity: 1;
+        }
+        
+        /* Mobile Controls Styling */
+        .mobile-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .mobile-controls.ui-visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .mobile-control-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+            border-radius: 22px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-control-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 0;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, color 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .mobile-control-btn:hover,
+        .mobile-control-btn:focus {
+            transform: scale(1.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .mobile-control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .mobile-toggle-switch {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 0;
+            transition: transform 0.2s ease, color 0.2s ease;
+            min-height: 36px;
+            min-width: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .mobile-toggle-switch:hover,
+        .mobile-toggle-switch:focus {
+            transform: scale(1.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .mobile-toggle-switch:active {
+            transform: scale(0.95);
+        }
+        
+        .mobile-toggle-switch input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .mobile-toggle-icon {
+            width: 32px;
+            height: 16px;
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            position: relative;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .mobile-toggle-icon::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: white;
+            top: 1px;
+            left: 1px;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-toggle-switch input:checked + .mobile-toggle-icon {
+            background-color: #6B7280;
+            border-color: #6B7280;
+        }
+        
+        .mobile-toggle-switch input:checked + .mobile-toggle-icon::after {
+            transform: translateX(16px);
+        }
+        
+        /* Show mobile controls only on mobile */
+        @media (max-width: 768px) {
+            .desktop-controls {
+                display: none !important;
+            }
+            
+            .mobile-controls {
+                display: block;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-controls {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -132,7 +283,6 @@
     <div id="video-container" role="main" aria-label="Dreams and Poems video player">
         <video id="video-a" class="video-player" playsinline muted aria-label="Dreams and Poems video content"></video>
         <video id="video-b" class="video-player" playsinline muted aria-label="Dreams and Poems video content"></video>
-        <div id="progress-bar" role="progressbar" aria-label="Video progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
     </div>
 
     <div id="ui-overlay" class="ui-overlay">
@@ -148,13 +298,24 @@
             </div>
         </div>
         
+        <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
+            <div class="mobile-control-bar">
+                <button id="mobile-toggle-sound-btn" type="button" class="mobile-control-btn" title="Toggle Sound" aria-label="Toggle sound"></button>
+                <label class="mobile-toggle-switch" role="switch" aria-label="Toggle autoplay" tabindex="0">
+                    <input type="checkbox" id="mobile-auto-play-checkbox" checked>
+                    <span class="mobile-toggle-icon"></span>
+                    <span class="sr-only">Toggle autoplay</span>
+                </label>
+            </div>
+        </div>
+        
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
         
         <a href="https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Carlos_Escobar.pdf" target="_blank" rel="noopener noreferrer"
            id="portfolio-link" class="nav-link portfolio-link" aria-label="View Portfolio - Opens PDF document">Portfolio</a>
         
-        <span id="version-number" class="nav-link version-link" aria-label="Application version v009">v009</span>
+        <span id="version-number" class="nav-link version-link" aria-label="Application version v011">v011</span>
         
         <div id="gesture-feedback" aria-live="polite" aria-atomic="true" role="status">
             <div id="gesture-icon" aria-hidden="true"></div>
@@ -175,8 +336,9 @@
             // Configuration
             const CONFIG = {
                 PRELOAD_BUFFER_SIZE_DESKTOP: 3,
-                PRELOAD_BUFFER_SIZE_MOBILE: 1,
+                PRELOAD_BUFFER_SIZE_MOBILE: 2,  // Increased for better mobile performance
                 CROSSFADE_DURATION: 1500,
+                CROSSFADE_DURATION_MOBILE: 800, // Faster mobile transitions
                 UI_TIMEOUT: 3000,
                 videoUrls: window.VIDEO_URLS || VIDEO_URLS
             };
@@ -301,7 +463,8 @@
             const toggleSoundBtn = document.getElementById('toggle-sound-btn');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const autoPlayCheckbox = document.getElementById('auto-play-checkbox');
-            const progressBar = document.getElementById('progress-bar');
+            const mobileToggleSoundBtn = document.getElementById('mobile-toggle-sound-btn');
+            const mobileAutoPlayCheckbox = document.getElementById('mobile-auto-play-checkbox');
             const gestureFeedback = document.getElementById('gesture-feedback');
             const gestureIcon = document.getElementById('gesture-icon');
             const gestureText = document.getElementById('gesture-text');
@@ -317,10 +480,6 @@
             let inactiveVideoElement = videoB;
             let isTransitioning = false;
             const preloadedVideos = new Map();
-            let mobileControlMode = 'sound';
-            let touchStartX = 0, touchStartY = 0;
-            let holdTimeout;
-            let wasPausedByHold = false;
             let needsTapToResume = false;
 
             // Enhanced user preferences
@@ -330,12 +489,26 @@
                         const stored = localStorage.getItem('dreamsAndPoems.preferences');
                         if (stored) {
                             const prefs = JSON.parse(stored);
-                            videoA.muted = videoB.muted = prefs.muted !== false;
-                            autoPlayCheckbox.checked = prefs.autoplay !== false;
-                            mobileControlMode = prefs.mobileControlMode || 'sound';
+                            // Desktop and mobile autoplay should always be on by default
+                            const autoplayEnabled = prefs.autoplay !== false;
+                            autoPlayCheckbox.checked = autoplayEnabled;
+                            if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = autoplayEnabled;
+                            
+                            // Sound should be off by default when autoplay is on
+                            const shouldMute = autoplayEnabled ? true : (prefs.muted !== false);
+                            videoA.muted = videoB.muted = shouldMute;
+                        } else {
+                            // Default settings: autoplay on, sound off
+                            autoPlayCheckbox.checked = true;
+                            if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
+                            videoA.muted = videoB.muted = true;
                         }
                     } catch (e) {
                         console.warn('Failed to load preferences:', e);
+                        // Fallback to defaults
+                        autoPlayCheckbox.checked = true;
+                        if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
+                        videoA.muted = videoB.muted = true;
                     }
                 },
                 
@@ -344,7 +517,6 @@
                         const prefs = {
                             muted: videoA.muted,
                             autoplay: autoPlayCheckbox.checked,
-                            mobileControlMode: mobileControlMode,
                             lastSaved: Date.now()
                         };
                         localStorage.setItem('dreamsAndPoems.preferences', JSON.stringify(prefs));
@@ -422,7 +594,9 @@
                         crossFade();
                     } else {
                         console.log('Loading new video:', videoUrl);
-                        inactiveVideoElement.addEventListener('canplay', crossFade, { once: true });
+                        inactiveVideoElement.addEventListener('canplay', () => {
+                            crossFade();
+                        }, { once: true });
                         inactiveVideoElement.addEventListener('error', handleVideoError, { once: true });
                         inactiveVideoElement.src = videoUrl;
                         inactiveVideoElement.load();
@@ -446,6 +620,9 @@
                         });
                     }
                     
+                    // Use faster crossfade duration on mobile
+                    const crossfadeDuration = isDesktop ? CONFIG.CROSSFADE_DURATION : CONFIG.CROSSFADE_DURATION_MOBILE;
+                    
                     // Enhanced crossfade with animation monitoring
                     inactiveVideoElement.style.opacity = 1;
                     activeVideoElement.style.opacity = 0;
@@ -461,13 +638,12 @@
                         // Setup event listeners
                         setupEventListeners(activeVideoElement);
                         updatePreloadQueue();
-                        updateProgress();
                         
                         isTransitioning = false;
                         
                         announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
                         
-                    }, CONFIG.CROSSFADE_DURATION);
+                    }, crossfadeDuration);
                     
                 } catch (error) {
                     errorBoundary.handleError(error, { context: 'crossFade' });
@@ -487,10 +663,13 @@
                     video.playsInline = true;
                     video.preload = 'auto';
                     
+                    // Use shorter timeout on mobile for faster fallback
+                    const timeoutDuration = isDesktop ? 15000 : 10000;
+                    
                     const loadPromise = new Promise((resolve, reject) => {
                         const timeout = setTimeout(() => {
                             reject(new Error('Preload timeout'));
-                        }, 15000);
+                        }, timeoutDuration);
                         
                         video.addEventListener('canplaythrough', () => {
                             clearTimeout(timeout);
@@ -509,17 +688,17 @@
                     loadPromise.then(() => {
                         if (!preloadedVideos.has(url)) {
                             preloadedVideos.set(url, video);
-                            console.log('Preloaded:', url);
+                            console.log('✅ Preloaded:', url.split('/').pop());
                         }
                     }).catch(error => {
-                        console.warn('Preload failed:', url, error);
+                        console.warn('⚠️ Preload failed:', url.split('/').pop(), error.message);
                         if (video.parentNode) {
                             video.parentNode.removeChild(video);
                         }
                     });
                     
                 } catch (error) {
-                    console.warn('Preloading setup failed:', url, error);
+                    console.warn('⚠️ Preloading setup failed:', url.split('/').pop(), error.message);
                 }
             }
 
@@ -573,21 +752,11 @@
             }
 
             function handleTimeUpdate() {
-                updateProgress();
-                
                 if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
                 
                 const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
                 if (timeRemaining < 3.2 && timeRemaining > 0) {
                     playNextContent();
-                }
-            }
-
-            function updateProgress() {
-                if (activeVideoElement && activeVideoElement.duration && progressBar) {
-                    const progress = (activeVideoElement.currentTime / activeVideoElement.duration) * 100;
-                    progressBar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
-                    progressBar.setAttribute('aria-valuenow', Math.round(progress));
                 }
             }
 
@@ -612,11 +781,21 @@
             function updateUI() {
                 try {
                     const isMuted = videoA.muted;
+                    const soundIcon = isMuted ? ICONS.soundOff : ICONS.soundOn;
+                    
+                    // Update desktop sound button
                     if (toggleSoundBtn) {
-                        toggleSoundBtn.innerHTML = isMuted ? ICONS.soundOff : ICONS.soundOn;
+                        toggleSoundBtn.innerHTML = soundIcon;
                         toggleSoundBtn.setAttribute('aria-label', `${isMuted ? 'Unmute' : 'Mute'} sound (M)`);
                     }
                     
+                    // Update mobile sound button
+                    if (mobileToggleSoundBtn) {
+                        mobileToggleSoundBtn.innerHTML = soundIcon;
+                        mobileToggleSoundBtn.setAttribute('aria-label', `${isMuted ? 'Unmute' : 'Mute'} sound`);
+                    }
+                    
+                    // Update desktop fullscreen button (only on desktop)
                     if (isDesktop && fullscreenBtn) {
                         const isFullscreen = !!document.fullscreenElement;
                         fullscreenBtn.innerHTML = isFullscreen ? ICONS.fullscreenExit : ICONS.fullscreenEnter;
@@ -633,9 +812,18 @@
                 return () => {
                     if (uiOverlay) {
                         uiOverlay.classList.add('ui-visible');
+                        // Also show mobile controls when UI is visible
+                        const mobileControls = document.querySelector('.mobile-controls');
+                        if (mobileControls) {
+                            mobileControls.classList.add('ui-visible');
+                        }
+                        
                         clearTimeout(timeout);
                         timeout = setTimeout(() => {
                             uiOverlay.classList.remove('ui-visible');
+                            if (mobileControls) {
+                                mobileControls.classList.remove('ui-visible');
+                            }
                         }, CONFIG.UI_TIMEOUT);
                     }
                 };
@@ -645,6 +833,11 @@
                 const shouldLoop = !autoPlayCheckbox.checked;
                 videoA.loop = shouldLoop;
                 videoB.loop = shouldLoop;
+                
+                // Sync mobile checkbox with desktop
+                if (mobileAutoPlayCheckbox) {
+                    mobileAutoPlayCheckbox.checked = autoPlayCheckbox.checked;
+                }
             }
 
             function toggleSound(showFeedback = false) {
@@ -700,6 +893,11 @@
                     let iconHtml = '';
                     if (mode === 'sound') {
                         iconHtml = (videoA.muted ? ICONS.soundOff : ICONS.soundOn).replace('h-6 w-6', 'h-16 w-16');
+                    } else if (mode === 'mode') {
+                        // Show mode switch feedback
+                        iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                   </svg>`;
                     } else {
                         iconHtml = ICONS.autoplay;
                     }
@@ -709,9 +907,12 @@
                     
                     gestureFeedback.classList.add('visible');
                     
+                    // Show longer on mobile for better visibility
+                    const feedbackDuration = isDesktop ? 1000 : 1500;
+                    
                     setTimeout(() => {
                         gestureFeedback.classList.remove('visible');
-                    }, 1000);
+                    }, feedbackDuration);
                 } catch (error) {
                     errorBoundary.handleError(error, { context: 'showGestureFeedback' });
                 }
@@ -813,6 +1014,15 @@
                             userPreferences.save();
                         });
                     }
+                    
+                    // Mobile autoplay checkbox sync
+                    if (mobileAutoPlayCheckbox) {
+                        mobileAutoPlayCheckbox.addEventListener('change', () => {
+                            autoPlayCheckbox.checked = mobileAutoPlayCheckbox.checked;
+                            setLooping();
+                            userPreferences.save();
+                        });
+                    }
 
                     // Window events
                     window.addEventListener('resize', () => {
@@ -837,20 +1047,19 @@
                     document.addEventListener('visibilitychange', () => {
                         if (document.hidden && activeVideoElement && !activeVideoElement.paused) {
                             activeVideoElement.pause();
-                            wasPausedByHold = true;
-                        } else if (!document.hidden && wasPausedByHold) {
+                        } else if (!document.hidden && activeVideoElement && activeVideoElement.paused && !needsTapToResume) {
                             activeVideoElement.play().catch(e => console.log('Resume failed:', e));
-                            wasPausedByHold = false;
                         }
                     });
 
-                    // Start playing - be more aggressive about autoplay
+                    // Start playing - ensure autoplay on, sound off by default
                     showStatus("Loading first video...", 1500);
                     currentIndex = Math.floor(Math.random() * videoUrls.length);
                     
-                    // Ensure videos are muted for better autoplay compatibility
-                    videoA.muted = true;
-                    videoB.muted = true;
+                    // Ensure autoplay is on and sound is muted for better compatibility
+                    autoPlayCheckbox.checked = true;
+                    if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
+                    videoA.muted = videoB.muted = true;
                     videoA.playsInline = true;
                     videoB.playsInline = true;
                     
@@ -994,45 +1203,28 @@
             function initializeMobile() {
                 console.log('📱 Initializing mobile features...');
                 
-                // Ensure videos are muted for autoplay
+                // Ensure autoplay is on and sound is off by default
+                autoPlayCheckbox.checked = true;
+                if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
                 videoA.muted = videoB.muted = true;
                 
-                // Touch interactions
+                // Mobile sound button
+                if (mobileToggleSoundBtn) {
+                    mobileToggleSoundBtn.addEventListener('click', () => {
+                        toggleSound(true);
+                    });
+                }
+                
+                // Simple touch interactions for video navigation (tap to show controls)
                 if (videoContainer) {
                     videoContainer.addEventListener('touchstart', (e) => {
-                        const touch = e.touches[0];
-                        touchStartX = touch.clientX;
-                        touchStartY = touch.clientY;
-                        wasPausedByHold = false;
-                        
-                        holdTimeout = setTimeout(() => {
-                            if (activeVideoElement) {
-                                activeVideoElement.pause();
-                                wasPausedByHold = true;
-                            }
-                        }, 300);
-                    }, { passive: true });
-                    
-                    videoContainer.addEventListener('touchmove', (e) => {
-                        const touch = e.touches[0];
-                        const deltaX = Math.abs(touch.clientX - touchStartX);
-                        const deltaY = Math.abs(touch.clientY - touchStartY);
-                        
-                        if (deltaX > 10 || deltaY > 10) {
-                            clearTimeout(holdTimeout);
-                        }
+                        handleUIVisibility();
                     }, { passive: true });
                     
                     videoContainer.addEventListener('touchend', (e) => {
-                        clearTimeout(holdTimeout);
+                        const currentTime = Date.now();
                         
-                        if (wasPausedByHold) {
-                            if (activeVideoElement) {
-                                activeVideoElement.play().catch(e => console.log('Resume failed:', e));
-                            }
-                            return;
-                        }
-                        
+                        // Handle tap-to-resume if needed
                         if (needsTapToResume) {
                             if (activeVideoElement) {
                                 activeVideoElement.play().then(() => {
@@ -1046,26 +1238,12 @@
                             return;
                         }
                         
+                        // Just show controls on tap
                         handleUIVisibility();
-                        
-                        const touch = e.changedTouches[0];
-                        const deltaX = touch.clientX - touchStartX;
-                        const deltaY = touch.clientY - touchStartY;
-                        
-                        if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
-                            // Horizontal swipe
-                            if (mobileControlMode === 'sound') {
-                                toggleSound(true);
-                            } else {
-                                toggleAutoplay(true);
-                            }
-                        } else if (Math.abs(deltaY) > 50) {
-                            // Vertical swipe - switch control mode
-                            mobileControlMode = mobileControlMode === 'sound' ? 'autoplay' : 'sound';
-                            showGestureFeedback('mode', `${mobileControlMode} control`);
-                            userPreferences.save();
-                        }
                     }, { passive: true });
+                    
+                    // Prevent context menu on long press
+                    videoContainer.addEventListener('contextmenu', (e) => e.preventDefault());
                 }
             }
 

@@ -2,7 +2,6 @@
  * Dreams and Poems - Main Application
  * Enhanced video player application with modular architecture
  * 
- * @version 005
  * @author Carlos Escobar
  */
 
@@ -12,7 +11,6 @@ import { UIController } from './uiController.js';
 
 class DreamsAndPoemsApp {
   constructor() {
-    this.version = '005';
     this.isInitialized = false;
     this.config = this.loadConfiguration();
     
@@ -41,7 +39,7 @@ class DreamsAndPoemsApp {
     // Error boundary
     this.setupErrorBoundary();
     
-    console.log(`Dreams and Poems v${this.version} - Initializing...`);
+    console.log(`Dreams and Poems - Initializing...`);
   }
 
   /**
@@ -179,8 +177,7 @@ class DreamsAndPoemsApp {
       fullscreenBtn: document.getElementById('fullscreen-btn'),
       autoPlayCheckbox: document.getElementById('auto-play-checkbox'),
       
-      // Progress and feedback
-      progressBar: document.getElementById('progress-bar'),
+      // Feedback
       gestureFeedback: document.getElementById('gesture-feedback'),
       statusIndicator: document.getElementById('status-indicator'),
       
@@ -614,9 +611,6 @@ class DreamsAndPoemsApp {
     const { currentTime, duration } = data;
     
     if (duration > 0) {
-      const progress = (currentTime / duration) * 100;
-      this.uiController.updateProgress(progress, currentTime, duration);
-      
       // Handle autoplay transition
       if (this.state.autoplay && !this.videoManager.isTransitioning) {
         const timeRemaining = duration - currentTime;
@@ -964,8 +958,7 @@ class DreamsAndPoemsApp {
     const metrics = {
       initTime: this.performance.initTime,
       errorCount: this.performance.errors.length,
-      timestamp: new Date().toISOString(),
-      version: this.version
+      timestamp: new Date().toISOString()
     };
     
     StorageUtils.setItem('dreamsAndPoems.performance', metrics);
@@ -977,7 +970,6 @@ class DreamsAndPoemsApp {
    */
   getStatus() {
     return {
-      version: this.version,
       isInitialized: this.isInitialized,
       state: { ...this.state },
       performance: {

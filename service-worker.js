@@ -3,13 +3,12 @@
  * Provides offline support and performance optimization
  * Enhanced with PWA installation support
  * 
- * @version 005
  * @author Carlos Escobar
  */
 
-const CACHE_NAME = 'dreams-and-poems-v005';
-const STATIC_CACHE_NAME = 'dreams-and-poems-static-v005';
-const DYNAMIC_CACHE_NAME = 'dreams-and-poems-dynamic-v005';
+const CACHE_NAME = 'dreams-and-poems-v008';
+const STATIC_CACHE_NAME = 'dreams-and-poems-static-v008';
+const DYNAMIC_CACHE_NAME = 'dreams-and-poems-dynamic-v008';
 
 // Files to cache immediately
 const STATIC_FILES = [

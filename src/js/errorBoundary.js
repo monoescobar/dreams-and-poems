@@ -2,7 +2,6 @@
  * Dreams and Poems - Error Boundary
  * Comprehensive error handling and recovery system
  * 
- * @version 2.0.0
  * @author Carlos Escobar
  */
 

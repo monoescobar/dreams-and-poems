@@ -79,16 +79,16 @@ body {
   will-change: opacity;
 }
 
-/* Mobile video adjustments - show full video without cropping */
+/* Mobile video adjustments - always full screen, crop if needed */
 @media (max-width: 768px) {
   .video-player {
-    object-fit: contain;
+    object-fit: cover;
     object-position: center center;
-    /* Show complete video without cropping */
+    /* Always fill screen completely, crop if necessary */
     width: 100%;
     height: 100%;
-    min-width: unset;
-    min-height: unset;
+    min-width: 100%;
+    min-height: 100%;
   }
 }
 
@@ -355,32 +355,6 @@ body {
   transform: translateX(20px);
 }
 
-/* --- Progress Bar --- */
-#progress-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 1px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  mix-blend-mode: difference;
-  transition: width 0.1s linear, opacity var(--transition-medium);
-  border-radius: 0;
-  z-index: 5;
-  opacity: 0; /* Start hidden */
-}
-
-/* Show progress bar when UI is visible */
-.ui-overlay.ui-visible ~ * #progress-bar,
-body:not(.ui-hidden) #progress-bar {
-  opacity: 1;
-}
-
-/* Hide progress bar when UI is hidden */
-body.ui-hidden #progress-bar {
-  opacity: 0;
-}
-
 /* --- Gesture Feedback --- */
 #gesture-feedback {
   position: fixed;
@@ -499,13 +473,13 @@ body.ui-hidden #progress-bar {
   }
   
   .video-player {
-    /* Show full video without cropping on mobile */
-    object-fit: contain;
+    /* Always fill screen completely on mobile, crop if necessary */
+    object-fit: cover;
     object-position: center center;
     width: 100%;
     height: 100%;
-    min-width: unset;
-    min-height: unset;
+    min-width: 100%;
+    min-height: 100%;
     transform: translate(-50%, -50%);
   }
 }

@@ -2,7 +2,6 @@
  * Dreams and Poems - Utility Functions
  * Core utility functions for the video player application
  * 
- * @version 2.0.0
  * @author Carlos Escobar
  */
 

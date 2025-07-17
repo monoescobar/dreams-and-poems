@@ -2,7 +2,6 @@
  * Dreams and Poems - Video URLs Configuration
  * Enhanced with metadata, categorization, and error handling
  * 
- * @version 2.0.0
  * @author Carlos Escobar
  * @description Video URL configuration with enhanced features
  */
@@ -29,7 +28,7 @@ const VIDEO_METADATA = {
 const VIDEO_CONFIG = {
   preload: {
     desktop: 3,
-    mobile: 1
+    mobile: 2  // Increased from 1 to 2 for smoother mobile experience
   },
   retry: {
     maxAttempts: 3,
@@ -38,6 +37,11 @@ const VIDEO_CONFIG = {
   timeout: {
     loading: 30000,
     buffer: 5000
+  },
+  mobile: {
+    crossfadeDuration: 800,  // Faster transitions on mobile
+    touchTimeout: 150,       // Reduced touch detection timeout
+    enableHoldToPause: false // Disable problematic hold-to-pause
   }
 };
 
@@ -106,7 +110,6 @@ window.VIDEO_URLS = {
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Desktop/Escobarte250324223831_00001-audio.mp4"
     ],
     mobile: [
-        "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte250422005005_00001-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00017-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00020-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00021-audio.mp4",
@@ -164,7 +167,6 @@ window.VIDEO_URLS = {
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte250421001531_00002-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte250421001532_00001-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte250421001533_00001-audio.mp4",
-        "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte250422005005_00001-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00017-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00020-audio.mp4",
         "https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Dreams%20and%20Poems/Mobile/Escobarte_dreams_360_00021-audio.mp4",
