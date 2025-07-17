@@ -333,7 +333,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v014">v014</span>
+            <span class="desktop-version-number" aria-label="Application version v015">v015</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -348,7 +348,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v014">v014</span>
+        <span class="mobile-version-number" aria-label="Application version v015">v015</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -1249,6 +1249,11 @@
                 
                 // Mobile sound button
                 if (mobileToggleSoundBtn) {
+                    // Set initial icon for mobile sound button
+                    const initialIcon = videoA.muted ? ICONS.soundOff : ICONS.soundOn;
+                    mobileToggleSoundBtn.innerHTML = initialIcon;
+                    mobileToggleSoundBtn.setAttribute('aria-label', `${videoA.muted ? 'Unmute' : 'Mute'} sound`);
+                    
                     mobileToggleSoundBtn.addEventListener('click', () => {
                         toggleSound(true);
                     });
