@@ -308,7 +308,7 @@ body {
   outline: none;
 }
 
-.about-link { right: 80px; }
+.about-link { right: var(--spacing-lg); }
 .portfolio-link { left: var(--spacing-lg); }
 .version-link { right: var(--spacing-lg); }
 

@@ -159,7 +159,7 @@
             background: rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(8px);
             border-radius: 22px;
-            padding: 6px;
+            padding: 6px 11px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
@@ -257,6 +257,27 @@
             transform: translateX(16px);
         }
         
+        .mobile-version-number {
+            color: rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            text-align: right;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: none;
+            z-index: 1002;
+        }
+        
+        .desktop-version-number {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+            text-align: right;
+            position: fixed;
+            top: var(--spacing-lg);
+            right: var(--spacing-lg);
+            display: block;
+        }
+        
         /* Show mobile controls only on mobile */
         @media (max-width: 768px) {
             .desktop-controls {
@@ -266,11 +287,27 @@
             .mobile-controls {
                 display: block;
             }
+            
+            .mobile-version-number {
+                display: block;
+            }
+            
+            .desktop-version-number {
+                display: none;
+            }
         }
         
         @media (min-width: 769px) {
             .mobile-controls {
                 display: none !important;
+            }
+            
+            .mobile-version-number {
+                display: none;
+            }
+            
+            .desktop-version-number {
+                display: block;
             }
         }
     </style>
@@ -296,6 +333,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
+            <span class="desktop-version-number" aria-label="Application version v013">v013</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -309,13 +347,14 @@
             </div>
         </div>
         
+        <!-- Mobile version number positioned independently in top-right corner -->
+        <span class="mobile-version-number" aria-label="Application version v013">v013</span>
+        
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
         
         <a href="https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Carlos_Escobar.pdf" target="_blank" rel="noopener noreferrer"
            id="portfolio-link" class="nav-link portfolio-link" aria-label="View Portfolio - Opens PDF document">Portfolio</a>
-        
-        <span id="version-number" class="nav-link version-link" aria-label="Application version v012">v012</span>
         
         <div id="gesture-feedback" aria-live="polite" aria-atomic="true" role="status">
             <div id="gesture-icon" aria-hidden="true"></div>
