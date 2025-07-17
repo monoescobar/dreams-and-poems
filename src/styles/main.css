@@ -34,10 +34,13 @@
 
 html {
   scroll-behavior: smooth;
+  /* Prevent overscroll on mobile */
+  overscroll-behavior: none;
 }
 
 body {
   margin: 0;
+  padding: 0;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--primary-bg);
@@ -49,6 +52,12 @@ body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+  /* Ensure full viewport coverage on mobile */
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 /* --- Video Background --- */
@@ -81,14 +90,62 @@ body {
 
 /* Mobile video adjustments - always full screen, crop if needed */
 @media (max-width: 768px) {
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0;
+  }
+  
+  #video-container {
+    /* Ensure container fills viewport completely */
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 0;
+  }
+  
   .video-player {
+    /* Force full viewport coverage */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    min-width: 100vw;
+    min-height: 100vh;
     object-fit: cover;
     object-position: center center;
-    /* Always fill screen completely, crop if necessary */
-    width: 100%;
-    height: 100%;
-    min-width: 100%;
-    min-height: 100%;
+    transform: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Additional overrides for deployment differences */
+  * {
+    box-sizing: border-box;
+  }
+  
+  /* Ensure no iOS/Android status bar spacing */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    html, body {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    
+    #video-container,
+    .video-player {
+      top: 0 !important;
+    }
   }
 }
 
@@ -463,24 +520,6 @@ body {
     min-height: 48px;
     min-width: 48px;
     font-size: 1rem;
-  }
-  
-  /* Enhanced mobile video display */
-  #video-container {
-    /* Ensure container fills viewport */
-    width: 100vw;
-    height: 100vh;
-  }
-  
-  .video-player {
-    /* Always fill screen completely on mobile, crop if necessary */
-    object-fit: cover;
-    object-position: center center;
-    width: 100%;
-    height: 100%;
-    min-width: 100%;
-    min-height: 100%;
-    transform: translate(-50%, -50%);
   }
 }
 
