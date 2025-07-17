@@ -280,7 +280,7 @@ body {
   border-radius: var(--border-radius-medium);
   background: var(--ui-overlay-bg);
   backdrop-filter: var(--ui-overlay-blur);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: none !important;
 }
 
 /* --- Navigation Links --- */

@@ -22,7 +22,6 @@ const STATIC_FILES = [
   '/src/js/uiController.js',
   '/src/js/errorBoundary.js',
   '/video-urls.js',
-  '/version.json',
   '/icon-192x192.png',
   '/icon-512x512.png'
 ];

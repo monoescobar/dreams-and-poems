@@ -154,13 +154,13 @@
         
         .mobile-control-bar {
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 26px;
-            background: rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(8px);
+            background: transparent;
+            backdrop-filter: none;
             border-radius: 22px;
             padding: 6px 26px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: none;
         }
         
         .mobile-control-btn {
@@ -333,12 +333,11 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v016">v016</span>
+            <span class="desktop-version-number" aria-label="Application version v017">v017</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
             <div class="mobile-control-bar">
-                <button id="mobile-toggle-sound-btn" type="button" class="mobile-control-btn" title="Toggle Sound" aria-label="Toggle sound"></button>
                 <label class="mobile-toggle-switch" role="switch" aria-label="Toggle autoplay" tabindex="0">
                     <input type="checkbox" id="mobile-auto-play-checkbox" checked>
                     <span class="mobile-toggle-icon"></span>
@@ -348,7 +347,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v016">v016</span>
+        <span class="mobile-version-number" aria-label="Application version v017">v017</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -502,7 +501,6 @@
             const toggleSoundBtn = document.getElementById('toggle-sound-btn');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const autoPlayCheckbox = document.getElementById('auto-play-checkbox');
-            const mobileToggleSoundBtn = document.getElementById('mobile-toggle-sound-btn');
             const mobileAutoPlayCheckbox = document.getElementById('mobile-auto-play-checkbox');
             const gestureFeedback = document.getElementById('gesture-feedback');
             const gestureIcon = document.getElementById('gesture-icon');
@@ -828,12 +826,6 @@
                         toggleSoundBtn.setAttribute('aria-label', `${isMuted ? 'Unmute' : 'Mute'} sound (M)`);
                     }
                     
-                    // Update mobile sound button
-                    if (mobileToggleSoundBtn) {
-                        mobileToggleSoundBtn.innerHTML = soundIcon;
-                        mobileToggleSoundBtn.setAttribute('aria-label', `${isMuted ? 'Unmute' : 'Mute'} sound`);
-                    }
-                    
                     // Update desktop fullscreen button (only on desktop)
                     if (isDesktop && fullscreenBtn) {
                         const isFullscreen = !!document.fullscreenElement;
@@ -1060,6 +1052,7 @@
                             autoPlayCheckbox.checked = mobileAutoPlayCheckbox.checked;
                             setLooping();
                             userPreferences.save();
+                            showGestureFeedback('autoplay', mobileAutoPlayCheckbox.checked ? 'On' : 'Off');
                         });
                     }
 
@@ -1247,47 +1240,42 @@
                 if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
                 videoA.muted = videoB.muted = true;
                 
-                // Mobile sound button
-                if (mobileToggleSoundBtn) {
-                    // Set initial icon for mobile sound button with fallback
-                    console.log('📱 Setting up mobile sound button icon...');
-                    
-                    // Ensure ICONS are available
-                    const soundOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
-                    const soundOnIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
-                    
-                    // Use direct icons instead of ICONS object to avoid timing issues
-                    const initialIcon = videoA.muted ? soundOffIcon : soundOnIcon;
-                    mobileToggleSoundBtn.innerHTML = initialIcon;
-                    mobileToggleSoundBtn.setAttribute('aria-label', `${videoA.muted ? 'Unmute' : 'Mute'} sound`);
-                    
-                    console.log('📱 Mobile sound button icon set:', videoA.muted ? 'muted' : 'unmuted');
-                    
-                    mobileToggleSoundBtn.addEventListener('click', () => {
-                        toggleSound(true);
-                    });
-                    
-                    // Additional fallback to ensure icon appears
-                    setTimeout(() => {
-                        if (mobileToggleSoundBtn && (!mobileToggleSoundBtn.innerHTML || mobileToggleSoundBtn.innerHTML.trim() === '')) {
-                            console.log('📱 Applying fallback icon for mobile sound button');
-                            const fallbackIcon = videoA.muted ? soundOffIcon : soundOnIcon;
-                            mobileToggleSoundBtn.innerHTML = fallbackIcon;
-                        }
-                    }, 500);
-                }
-                
-                // Simple touch interactions for video navigation (tap to show controls)
+                // Touch interactions for video navigation and sound toggle
                 if (videoContainer) {
                     videoContainer.addEventListener('touchstart', (e) => {
                         handleUIVisibility();
                     }, { passive: true });
                     
                     videoContainer.addEventListener('touchend', (e) => {
-                        const currentTime = Date.now();
+                        // Get touch position
+                        const touch = e.changedTouches[0];
+                        const touchX = touch.clientX;
+                        const touchY = touch.clientY;
+                        
+                        // Check if touch is on excluded elements (autoplay toggle, about, portfolio)
+                        const elementAtTouch = document.elementFromPoint(touchX, touchY);
+                        
+                        // Define excluded elements and their containers
+                        const excludedSelectors = [
+                            '.mobile-toggle-switch',
+                            '.mobile-toggle-icon', 
+                            '#mobile-auto-play-checkbox',
+                            '.about-link',
+                            '.portfolio-link',
+                            '#about-link',
+                            '#portfolio-link'
+                        ];
+                        
+                        let shouldExclude = false;
+                        for (const selector of excludedSelectors) {
+                            if (elementAtTouch?.closest(selector) || elementAtTouch?.matches(selector)) {
+                                shouldExclude = true;
+                                break;
+                            }
+                        }
                         
                         // Handle tap-to-resume if needed
-                        if (needsTapToResume) {
+                        if (needsTapToResume && !shouldExclude) {
                             if (activeVideoElement) {
                                 activeVideoElement.play().then(() => {
                                     needsTapToResume = false;
@@ -1300,7 +1288,13 @@
                             return;
                         }
                         
-                        // Just show controls on tap
+                        // Toggle sound if not touching excluded elements
+                        if (!shouldExclude) {
+                            console.log('📱 Touch detected, toggling sound');
+                            toggleSound(true); // Show visual feedback
+                        }
+                        
+                        // Always show controls on tap
                         handleUIVisibility();
                     }, { passive: true });
                     
