@@ -55,7 +55,7 @@ window.VIDEO_URLS = {
          ]
 };
 
-// Enhanced error handling and URL validation for Dreams and Poems v023
+// Enhanced error handling and URL validation for Dreams and Poems v024
 window.VIDEO_ERROR_HANDLER = {
     failedUrls: new Set(),
     retryCount: new Map(),

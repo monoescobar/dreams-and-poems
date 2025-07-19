@@ -337,7 +337,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v023">v023</span>
+            <span class="desktop-version-number" aria-label="Application version v024">v024</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -351,7 +351,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v023">v023</span>
+        <span class="mobile-version-number" aria-label="Application version v024">v024</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -365,15 +365,15 @@
         </div>
     </div>
 
-    <div id="status-indicator" aria-live="polite" aria-atomic="true">Loading Dreams and Poems...</div>
+    <div id="status-indicator" aria-live="polite" aria-atomic="true" style="opacity: 0;"></div>
 
     <!-- Load application with enhanced features -->
     <script>
         console.log('🎬 Dreams and Poems script loading...');
         
-        // Enhanced Dreams and Poems Application v023
+        // Enhanced Dreams and Poems Application v024
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎬 Dreams and Poems v023 - Starting initialization...');
+            console.log('🎬 Dreams and Poems v024 - Starting initialization...');
             
             // Configuration with mobile-first optimizations
             const CONFIG = {
@@ -410,9 +410,6 @@
                     } catch (e) {
                         console.warn('Failed to store error:', e);
                     }
-                    
-                    // Show user-friendly message
-                    showStatus(`Error: ${error.message}. Retrying...`, 3000);
                 },
                 
                 recover() {
@@ -802,25 +799,86 @@
                     currentIndex = index % videoUrls.length;
                     const videoUrl = videoUrls[currentIndex];
                     
+                    // Enhanced URL validation before attempting to load
+                    if (!videoUrl || typeof videoUrl !== 'string') {
+                        throw new Error(`Invalid video URL at index ${currentIndex}: ${videoUrl}`);
+                    }
+                    
+                    // Mobile-specific URL validation
+                    if (!isDesktop) {
+                        console.log(`📱 Mobile: Loading video ${currentIndex + 1}/${videoUrls.length}`);
+                        console.log(`📱 URL: ${videoUrl.split('/').pop()}`);
+                        
+                        // Validate URL format on mobile
+                        if (!videoUrl.startsWith('https://filedn.com/') || !videoUrl.endsWith('.mp4')) {
+                            throw new Error(`Malformed video URL on mobile: ${videoUrl}`);
+                        }
+                    }
+                    
                     // Enhanced preloading check
                     const preloadedVideo = preloadedVideos.get(videoUrl);
                     if (preloadedVideo && preloadedVideo.readyState >= 2) {
-                        console.log('Using preloaded video:', videoUrl);
+                        console.log('Using preloaded video:', videoUrl.split('/').pop());
                         inactiveVideoElement.src = preloadedVideo.src;
                         inactiveVideoElement.currentTime = 0;
                         crossFade();
                     } else {
-                        console.log('Loading new video:', videoUrl);
-                        inactiveVideoElement.addEventListener('canplay', () => {
+                        console.log('Loading new video:', videoUrl.split('/').pop());
+                        
+                        // Enhanced mobile error handling
+                        const videoLoadTimeout = setTimeout(() => {
+                            console.error('📱 Video load timeout on mobile');
+                            if (isTransitioning) {
+                                isTransitioning = false;
+                                playNextContent();
+                            }
+                        }, !isDesktop ? 15000 : 30000); // Shorter timeout for mobile
+                        
+                        const onCanPlay = () => {
+                            clearTimeout(videoLoadTimeout);
+                            inactiveVideoElement.removeEventListener('canplay', onCanPlay);
+                            inactiveVideoElement.removeEventListener('error', onVideoError);
                             crossFade();
-                        }, { once: true });
-                        inactiveVideoElement.addEventListener('error', handleVideoError, { once: true });
-                        inactiveVideoElement.src = videoUrl;
-                        inactiveVideoElement.load();
+                        };
+                        
+                        const onVideoError = (e) => {
+                            clearTimeout(videoLoadTimeout);
+                            inactiveVideoElement.removeEventListener('canplay', onCanPlay);
+                            inactiveVideoElement.removeEventListener('error', onVideoError);
+                            handleVideoError(e);
+                        };
+                        
+                        inactiveVideoElement.addEventListener('canplay', onCanPlay, { once: true });
+                        inactiveVideoElement.addEventListener('error', onVideoError, { once: true });
+                        
+                        // Enhanced mobile video loading
+                        if (!isDesktop) {
+                            // On mobile, ensure we clear any previous source first
+                            inactiveVideoElement.pause();
+                            inactiveVideoElement.src = '';
+                            inactiveVideoElement.load();
+                            
+                            // Small delay before setting new source on mobile
+                            setTimeout(() => {
+                                inactiveVideoElement.src = videoUrl;
+                                inactiveVideoElement.load();
+                            }, 100);
+                        } else {
+                            inactiveVideoElement.src = videoUrl;
+                            inactiveVideoElement.load();
+                        }
                     }
                 } catch (error) {
-                    errorBoundary.handleError(error, { context: 'playContent', index });
+                    console.error('📱 playContent error:', error);
+                    errorBoundary.handleError(error, { context: 'playContent', index, videoUrl: videoUrls[index] });
                     isTransitioning = false;
+                    
+                    // On mobile, try next video immediately
+                    if (!isDesktop) {
+                        setTimeout(() => {
+                            playNextContent();
+                        }, 1000);
+                    }
                 }
             }
 
@@ -833,7 +891,6 @@
                         playPromise.catch(e => {
                             console.log("Playback prevented. Needs user interaction:", e);
                             needsTapToResume = true;
-                            showStatus('Tap to enable playback', 3000);
                         });
                     }
                     
@@ -1184,9 +1241,33 @@
                 const videoUrl = e.target?.src || activeVideoElement?.currentSrc || 'unknown';
                 const videoName = videoUrl.split('/').pop() || 'unknown';
                 
+                // Enhanced mobile-specific error detection
+                const readyState = e.target?.readyState || 0;
+                const networkState = e.target?.networkState || 0;
+                
                 // Enhanced error logging with HTTP status detection
                 let statusCode = null;
                 let errorMessage = error.message || 'Unknown video error';
+                
+                // Enhanced mobile URL validation - check for malformed URLs
+                if (!isDesktop && videoUrl && videoUrl !== 'unknown') {
+                    console.group('📱 Mobile Video Error Analysis');
+                    console.log(`Video URL: ${videoUrl}`);
+                    console.log(`Ready State: ${readyState}`);
+                    console.log(`Network State: ${networkState}`);
+                    
+                    // Check for malformed URL or partial URL issues
+                    if (videoUrl.includes('://escob.art/') && !videoUrl.includes('filedn.com')) {
+                        console.error('❌ Malformed URL detected - missing domain');
+                        errorMessage = `Malformed video URL: ${videoName}`;
+                        statusCode = 'URL_MALFORMED';
+                    } else if (readyState === 0 && networkState === 3) {
+                        console.error('❌ Network error - no data loaded');
+                        errorMessage = `Network error loading: ${videoName}`;
+                        statusCode = 'NETWORK_ERROR';
+                    }
+                    console.groupEnd();
+                }
                 
                 // Try to extract HTTP status from error
                 if (error.message && error.message.includes('404')) {
@@ -1217,35 +1298,82 @@
                 console.log(`URL: ${videoUrl}`);
                 console.log(`Error Code: ${error.code || 'N/A'}`);
                 console.log(`Error Message: ${errorMessage}`);
-                console.log(`Ready State: ${e.target?.readyState || 'N/A'}`);
-                console.log(`Network State: ${e.target?.networkState || 'N/A'}`);
+                console.log(`Ready State: ${readyState}`);
+                console.log(`Network State: ${networkState}`);
                 if (statusCode) {
-                    console.log(`HTTP Status: ${statusCode}`);
+                    console.log(`Status/Issue: ${statusCode}`);
+                }
+                
+                // Enhanced mobile diagnostics
+                if (!isDesktop) {
+                    console.log('📱 Mobile-specific diagnostics:');
+                    console.log(`Current Index: ${currentIndex}`);
+                    console.log(`Video URLs Length: ${videoUrls.length}`);
+                    console.log(`Active Element: ${activeVideoElement === videoA ? 'videoA' : 'videoB'}`);
+                    console.log(`Is Transitioning: ${isTransitioning}`);
+                    
+                    // Check for URL corruption on mobile
+                    if (videoUrl && videoUrl !== 'unknown') {
+                        const expectedUrl = videoUrls[currentIndex % videoUrls.length];
+                        if (expectedUrl && videoUrl !== expectedUrl) {
+                            console.error(`❌ URL mismatch detected!`);
+                            console.log(`Expected: ${expectedUrl}`);
+                            console.log(`Actual: ${videoUrl}`);
+                        }
+                    }
                 }
                 console.groupEnd();
                 
                 errorBoundary.handleError(error, { 
                     context: 'videoError', 
                     src: videoUrl,
-                    readyState: e.target?.readyState,
-                    networkState: e.target?.networkState,
+                    readyState: readyState,
+                    networkState: networkState,
                     statusCode: statusCode,
-                    videoName: videoName
+                    videoName: videoName,
+                    isMobile: !isDesktop,
+                    currentIndex: currentIndex
                 });
                 
-                // Show user-friendly error message
-                if (statusCode === 404) {
-                    showStatus(`Video ${videoName} not found. Skipping...`, 3000);
-                } else {
-                    showStatus(`Video error: ${videoName}. Loading next...`, 3000);
-                }
-                
-                // Try next video after delay
-                setTimeout(() => {
-                    if (!isTransitioning) {
-                        playNextContent();
+                // Enhanced mobile recovery
+                if (!isDesktop) {
+                    console.log('📱 Starting mobile error recovery...');
+                    
+                    // Immediately stop all video elements
+                    [videoA, videoB].forEach(video => {
+                        if (video) {
+                            video.pause();
+                            video.currentTime = 0;
+                        }
+                    });
+                    
+                    // Clear any problematic video sources
+                    if (e.target) {
+                        e.target.src = '';
+                        e.target.load();
                     }
-                }, 1000);
+                    
+                    // Reset transition state
+                    isTransitioning = false;
+                    
+                    // Force cleanup of preloaded videos on mobile
+                    preloadedVideos.clear();
+                    
+                    // Wait a bit longer before trying next video on mobile
+                    setTimeout(() => {
+                        if (!isTransitioning) {
+                            console.log('📱 Attempting next video after mobile error recovery');
+                            playNextContent();
+                        }
+                    }, 2000); // Longer delay for mobile
+                } else {
+                    // Try next video after delay
+                    setTimeout(() => {
+                        if (!isTransitioning) {
+                            playNextContent();
+                        }
+                    }, 1000);
+                }
             }
 
             function updateUI() {
@@ -1316,7 +1444,6 @@
                             playPromise.catch(error => {
                                 console.log("Playback prevented. Needs user interaction.");
                                 needsTapToResume = true;
-                                showStatus('Tap to enable sound', 2000);
                             });
                         }
                     }
@@ -1520,7 +1647,6 @@
                     });
 
                     // Start playing - ensure autoplay on, sound off by default
-                    showStatus("Loading first video...", 1500);
                     currentIndex = Math.floor(Math.random() * videoUrls.length);
                     
                     // Ensure autoplay is on and sound is muted for better compatibility
@@ -1560,7 +1686,6 @@
                                 }, 60000); // Every minute
                             }, 2000);
                             
-                            showStatus("Playing automatically!", 2000);
                             announceToScreenReader('Dreams and Poems video player ready');
                             
                         } catch (error) {
@@ -1575,18 +1700,15 @@
                                 updateUI();
                                 setLooping();
                                 handleUIVisibility();
-                                showStatus("Playing automatically!", 2000);
                                 
                             } catch (secondError) {
                                 console.log('All autoplay attempts failed, requiring user interaction');
                                 needsTapToResume = true;
-                                showStatus('Tap anywhere to start playing', 5000);
                                 
                                 // Add click listener to entire page for easier activation
                                 const activateOnInteraction = () => {
                                     activeVideoElement.play().then(() => {
                                         needsTapToResume = false;
-                                        showStatus('Playing!', 1000);
                                         setupEventListeners(activeVideoElement);
                                         updateUI();
                                         setLooping();
@@ -1764,10 +1886,8 @@
                             if (activeVideoElement) {
                                 activeVideoElement.play().then(() => {
                                     needsTapToResume = false;
-                                    showStatus('Playing!', 1000);
                                 }).catch(err => {
                                     console.error("Resume failed:", err);
-                                    showStatus('Tap again to play', 2000);
                                 });
                             }
                             return;
