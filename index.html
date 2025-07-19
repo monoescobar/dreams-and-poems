@@ -337,7 +337,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v019">v019</span>
+            <span class="desktop-version-number" aria-label="Application version v020">v020</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -351,7 +351,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v019">v019</span>
+        <span class="mobile-version-number" aria-label="Application version v020">v020</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -375,14 +375,18 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🎬 Dreams and Poems v2.0 - Starting initialization...');
             
-            // Configuration
+            // Configuration with mobile-first optimizations
             const CONFIG = {
-                PRELOAD_BUFFER_SIZE_DESKTOP: 2, // Reduced from 3
-                PRELOAD_BUFFER_SIZE_MOBILE: 1,  // Reduced from 2 for better memory usage
+                PRELOAD_BUFFER_SIZE_DESKTOP: 2,
+                PRELOAD_BUFFER_SIZE_MOBILE: 1,  // Keep minimal for mobile
                 CROSSFADE_DURATION: 1500,
-                CROSSFADE_DURATION_MOBILE: 800, // Faster mobile transitions
+                CROSSFADE_DURATION_MOBILE: 600, // Much faster mobile transitions
                 UI_TIMEOUT: 3000,
-                videoUrls: window.VIDEO_URLS || VIDEO_URLS
+                videoUrls: window.VIDEO_URLS || VIDEO_URLS,
+                // Mobile-specific optimizations
+                MOBILE_MEMORY_LIMIT: 30 * 1024 * 1024, // 30MB limit for mobile
+                MOBILE_PRELOAD_DELAY: 1000, // Delay preloading on mobile
+                TOUCH_DEBOUNCE: 100 // Faster touch response
             };
 
             // Enhanced error handling
@@ -524,49 +528,43 @@
             let needsTapToResume = false;
             
             // Add memory limits after isDesktop is defined
-            CONFIG.MAX_PRELOAD_MEMORY = isDesktop ? 150 * 1024 * 1024 : 50 * 1024 * 1024; // Memory limits
+            CONFIG.MAX_PRELOAD_MEMORY = isDesktop ? 150 * 1024 * 1024 : CONFIG.MOBILE_MEMORY_LIMIT;
             
-            // Video element pool for better memory management
+            // Lightweight mobile-optimized video pool
             const videoPool = {
                 pool: [],
-                maxSize: isDesktop ? 4 : 2,
+                maxSize: isDesktop ? 3 : 1, // Much smaller pool for mobile
                 
                 acquire() {
                     if (this.pool.length > 0) {
                         const video = this.pool.pop();
-                        console.log(`♻️ Reusing video element from pool (${this.pool.length} remaining)`);
                         return video;
                     }
-                    console.log('🆕 Creating new video element');
                     return this.createElement();
                 },
                 
                 release(video) {
                     if (!video) return;
                     
-                    if (this.pool.length < this.maxSize) {
-                        // Clean up video element
-                        video.pause();
-                        video.currentTime = 0;
-                        video.src = '';
-                        video.removeAttribute('src');
-                        video.load(); // Clear any cached data
-                        
-                        // Reset styles and properties
-                        video.style.display = 'none';
-                        video.style.opacity = '';
-                        video.muted = true;
-                        video.playsInline = true;
-                        video.preload = 'metadata';
-                        
-                        this.pool.push(video);
-                        console.log(`♻️ Released video to pool (${this.pool.length}/${this.maxSize})`);
-                    } else {
-                        // Pool is full, remove from DOM
+                    // On mobile, immediately dispose instead of pooling
+                    if (!isDesktop) {
                         if (video.parentNode) {
                             video.parentNode.removeChild(video);
                         }
-                        console.log('🗑️ Video element disposed (pool full)');
+                        return;
+                    }
+                    
+                    if (this.pool.length < this.maxSize) {
+                        video.pause();
+                        video.currentTime = 0;
+                        video.src = '';
+                        video.load();
+                        video.style.display = 'none';
+                        this.pool.push(video);
+                    } else {
+                        if (video.parentNode) {
+                            video.parentNode.removeChild(video);
+                        }
                     }
                 },
                 
@@ -575,132 +573,72 @@
                     video.style.display = 'none';
                     video.muted = true;
                     video.playsInline = true;
-                    video.preload = 'metadata';
+                    video.preload = isDesktop ? 'metadata' : 'none'; // No preload on mobile
                     video.setAttribute('playsinline', '');
                     
-                    // GPU acceleration for preloaded videos
-                    video.style.transform = 'translateZ(0)';
-                    video.style.backfaceVisibility = 'hidden';
-                    video.style.willChange = 'opacity';
+                    // Minimal GPU acceleration for mobile
+                    if (isDesktop) {
+                        video.style.transform = 'translateZ(0)';
+                        video.style.backfaceVisibility = 'hidden';
+                    }
                     
                     return video;
                 },
                 
                 cleanup() {
-                    // Emergency cleanup - release all pooled videos
                     while (this.pool.length > 0) {
                         const video = this.pool.pop();
                         if (video.parentNode) {
                             video.parentNode.removeChild(video);
                         }
                     }
-                    console.log('🧹 Video pool cleaned up');
                 }
             };
             
-            // Performance monitoring
+            // Lightweight performance monitoring (mobile-optimized)
             const performanceMonitor = {
                 memoryUsage: 0,
                 lastCleanup: Date.now(),
                 metrics: {
-                    frameDrops: 0,
-                    loadTimes: [],
-                    memoryPressure: false,
-                    fps: 60,
-                    frameCount: 0,
-                    lastFrameTime: performance.now()
-                },
-                
-                // FPS measurement
-                measureFPS() {
-                    const now = performance.now();
-                    const delta = now - this.metrics.lastFrameTime;
-                    this.metrics.lastFrameTime = now;
-                    this.metrics.frameCount++;
-                    
-                    if (delta > 0) {
-                        const currentFPS = 1000 / delta;
-                        this.metrics.fps = this.metrics.fps * 0.9 + currentFPS * 0.1; // Smooth average
-                        
-                        if (currentFPS < 55) {
-                            this.metrics.frameDrops++;
-                        }
-                    }
-                    
-                    requestAnimationFrame(() => this.measureFPS());
-                },
-                
-                // Adaptive quality based on performance
-                adaptiveQuality: {
-                    lastAdjustment: 0,
-                    currentQuality: 'high',
-                    
-                    checkAndAdjust() {
-                        const now = Date.now();
-                        if (now - this.lastAdjustment < 5000) return; // Don't adjust too frequently
-                        
-                        const fps = performanceMonitor.metrics.fps;
-                        const memoryPressure = performanceMonitor.metrics.memoryPressure;
-                        
-                        if (fps < 50 || memoryPressure) {
-                            this.reduceQuality();
-                        } else if (fps > 58 && !memoryPressure && this.currentQuality !== 'high') {
-                            this.increaseQuality();
-                        }
-                        
-                        this.lastAdjustment = now;
-                    },
-                    
-                    reduceQuality() {
-                        if (this.currentQuality === 'high') {
-                            this.currentQuality = 'medium';
-                            CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP = Math.max(1, CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP - 1);
-                            CONFIG.PRELOAD_BUFFER_SIZE_MOBILE = 1;
-                            CONFIG.CROSSFADE_DURATION = Math.max(800, CONFIG.CROSSFADE_DURATION - 200);
-                            console.log('📉 Reduced quality to medium for better performance');
-                        } else if (this.currentQuality === 'medium') {
-                            this.currentQuality = 'low';
-                            CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP = 1;
-                            CONFIG.PRELOAD_BUFFER_SIZE_MOBILE = 1;
-                            CONFIG.CROSSFADE_DURATION = 600;
-                            console.log('📉 Reduced quality to low for better performance');
-                        }
-                        
-                        // Update preload buffer size
-                        preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
-                    },
-                    
-                    increaseQuality() {
-                        if (this.currentQuality === 'low') {
-                            this.currentQuality = 'medium';
-                            CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP = 2;
-                            CONFIG.CROSSFADE_DURATION = 1200;
-                            console.log('📈 Increased quality to medium');
-                        } else if (this.currentQuality === 'medium') {
-                            this.currentQuality = 'high';
-                            CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP = 3;
-                            CONFIG.CROSSFADE_DURATION = 1500;
-                            console.log('📈 Increased quality to high');
-                        }
-                        
-                        // Update preload buffer size
-                        preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
-                    }
+                    memoryPressure: false
                 },
                 
                 checkMemory() {
-                    if (performance.memory) {
+                    // Simplified memory check for mobile
+                    if (performance.memory && !isDesktop) {
                         this.memoryUsage = performance.memory.usedJSHeapSize;
                         this.metrics.memoryPressure = this.memoryUsage > CONFIG.MAX_PRELOAD_MEMORY;
                         
                         if (this.metrics.memoryPressure) {
-                            console.warn('Memory pressure detected, cleaning up preloaded videos');
+                            this.mobileCleanup();
+                        }
+                    } else if (isDesktop && performance.memory) {
+                        this.memoryUsage = performance.memory.usedJSHeapSize;
+                        this.metrics.memoryPressure = this.memoryUsage > CONFIG.MAX_PRELOAD_MEMORY;
+                        
+                        if (this.metrics.memoryPressure) {
                             this.aggressiveCleanup();
                         }
                     }
+                },
+                
+                mobileCleanup() {
+                    // Aggressive mobile cleanup - clear everything except current
+                    const currentUrl = videoUrls[currentIndex % videoUrls.length];
+                    let cleanedCount = 0;
                     
-                    // Check adaptive quality
-                    this.adaptiveQuality.checkAndAdjust();
+                    for (const [url, video] of preloadedVideos.entries()) {
+                        if (url !== currentUrl) {
+                            preloadedVideos.delete(url);
+                            if (video.parentNode) {
+                                video.parentNode.removeChild(video);
+                            }
+                            cleanedCount++;
+                        }
+                    }
+                    
+                    console.log(`📱 Mobile cleanup: removed ${cleanedCount} videos`);
+                    this.lastCleanup = Date.now();
                 },
                 
                 aggressiveCleanup() {
@@ -710,15 +648,11 @@
                     for (const [url, video] of preloadedVideos.entries()) {
                         if (url !== currentUrl) {
                             preloadedVideos.delete(url);
-                            // Use video pool for cleanup
                             videoPool.release(video);
                             cleanedCount++;
                         }
                     }
                     
-                    console.log(`Cleaned up ${cleanedCount} preloaded videos due to memory pressure`);
-                    
-                    // Force garbage collection if available
                     if (window.gc) {
                         window.gc();
                     }
@@ -727,87 +661,25 @@
                 },
                 
                 shouldPreload() {
+                    // On mobile, be very conservative
+                    if (!isDesktop) {
+                        return !this.metrics.memoryPressure && preloadedVideos.size === 0;
+                    }
                     return !this.metrics.memoryPressure && preloadedVideos.size < preloadBufferSize;
                 }
             };
             
-            // Network-aware buffering optimization
+            // Simplified network optimizer (desktop only)
             const networkOptimizer = {
-                connectionQuality: 'unknown',
-                lastCheck: 0,
-                
-                getConnectionQuality() {
-                    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                    if (!connection) {
-                        return {
-                            effectiveType: '4g',
-                            downlink: 10,
-                            rtt: 100,
-                            saveData: false
-                        };
-                    }
-                    
-                    return {
-                        effectiveType: connection.effectiveType || '4g',
-                        downlink: connection.downlink || 10,
-                        rtt: connection.rtt || 100,
-                        saveData: connection.saveData || false
-                    };
-                },
-                
-                updateConnectionAwareness() {
-                    const now = Date.now();
-                    if (now - this.lastCheck < 10000) return; // Check every 10 seconds
-                    
-                    const quality = this.getConnectionQuality();
-                    this.connectionQuality = quality.effectiveType;
-                    this.lastCheck = now;
-                    
-                    // Adjust buffer size based on connection
-                    const optimalBufferSize = this.getOptimalBufferSize(quality);
-                    
-                    if (isDesktop) {
-                        CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP = optimalBufferSize.desktop;
-                    } else {
-                        CONFIG.PRELOAD_BUFFER_SIZE_MOBILE = optimalBufferSize.mobile;
-                    }
-                    
-                    preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
-                    
-                    console.log(`📡 Network: ${quality.effectiveType} (${quality.downlink}Mbps), Buffer: ${preloadBufferSize}`);
-                },
-                
-                getOptimalBufferSize(quality) {
-                    if (quality.saveData) {
-                        return { desktop: 1, mobile: 1 };
-                    }
-                    
-                    switch (quality.effectiveType) {
-                        case 'slow-2g':
-                        case '2g':
-                            return { desktop: 1, mobile: 1 };
-                        case '3g':
-                            return { desktop: 2, mobile: 1 };
-                        case '4g':
-                        default:
-                            return { desktop: 3, mobile: 2 };
-                    }
-                },
-                
                 shouldPreloadVideo(url) {
-                    const quality = this.getConnectionQuality();
+                    // On mobile, skip all network checking - keep it simple
+                    if (!isDesktop) return false;
                     
-                    // Skip preloading on slow connections or data saver mode
-                    if (quality.saveData || quality.effectiveType === 'slow-2g' || quality.effectiveType === '2g') {
-                        return false;
-                    }
+                    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                    if (!connection) return true;
                     
-                    // On 3G, be more selective
-                    if (quality.effectiveType === '3g' && preloadedVideos.size >= 1) {
-                        return false;
-                    }
-                    
-                    return true;
+                    // Only check for data saver mode on desktop
+                    return !connection.saveData;
                 }
             };
 
@@ -949,65 +821,69 @@
                         });
                     }
                     
-                    // Use faster crossfade duration on mobile or adapted duration
+                    // Use much faster crossfade on mobile
                     const crossfadeDuration = isDesktop ? CONFIG.CROSSFADE_DURATION : CONFIG.CROSSFADE_DURATION_MOBILE;
                     
-                    // Enhanced crossfade with requestAnimationFrame for smooth animation
-                    const startTime = performance.now();
-                    let rafId = null;
+                    if (isDesktop) {
+                        // Enhanced RAF animation for desktop
+                        const startTime = performance.now();
+                        
+                        const animateCrossfade = (currentTime) => {
+                            const elapsed = currentTime - startTime;
+                            const progress = Math.min(elapsed / crossfadeDuration, 1);
+                            
+                            // Simple easing for better performance
+                            const easeProgress = progress * progress * (3 - 2 * progress);
+                            
+                            inactiveVideoElement.style.opacity = easeProgress;
+                            activeVideoElement.style.opacity = 1 - easeProgress;
+                            
+                            if (progress < 1) {
+                                requestAnimationFrame(animateCrossfade);
+                            } else {
+                                completeCrossfade();
+                            }
+                        };
+                        
+                        requestAnimationFrame(animateCrossfade);
+                    } else {
+                        // Simple CSS transition for mobile - much lighter
+                        inactiveVideoElement.style.transition = `opacity ${crossfadeDuration}ms ease-out`;
+                        activeVideoElement.style.transition = `opacity ${crossfadeDuration}ms ease-out`;
+                        
+                        inactiveVideoElement.style.opacity = '1';
+                        activeVideoElement.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            completeCrossfade();
+                        }, crossfadeDuration);
+                    }
                     
-                    // Use CSS custom properties for hardware acceleration
-                    inactiveVideoElement.style.setProperty('--crossfade-opacity', '0');
-                    activeVideoElement.style.setProperty('--crossfade-opacity', '1');
-                    
-                    const animateCrossfade = (currentTime) => {
-                        const elapsed = currentTime - startTime;
-                        const progress = Math.min(elapsed / crossfadeDuration, 1);
+                    function completeCrossfade() {
+                        // Swap elements
+                        [activeVideoElement, inactiveVideoElement] = [inactiveVideoElement, activeVideoElement];
                         
-                        // Use optimized easing function for smoother transition
-                        const easeProgress = progress < 0.5 
-                            ? 4 * progress * progress * progress
-                            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                        // Cleanup inactive video
+                        inactiveVideoElement.pause();
+                        inactiveVideoElement.currentTime = 0;
                         
-                        // Use transform instead of opacity for better performance
-                        const inactiveOpacity = easeProgress;
-                        const activeOpacity = 1 - easeProgress;
+                        // Reset styles
+                        inactiveVideoElement.style.transition = '';
+                        activeVideoElement.style.transition = '';
                         
-                        inactiveVideoElement.style.opacity = inactiveOpacity;
-                        activeVideoElement.style.opacity = activeOpacity;
+                        // Setup event listeners
+                        setupEventListeners(activeVideoElement);
                         
-                        // Also use CSS custom properties for potential CSS animations
-                        inactiveVideoElement.style.setProperty('--crossfade-opacity', inactiveOpacity);
-                        activeVideoElement.style.setProperty('--crossfade-opacity', activeOpacity);
-                        
-                        if (progress < 1) {
-                            rafId = requestAnimationFrame(animateCrossfade);
-                        } else {
-                            // Crossfade complete - swap elements
-                            [activeVideoElement, inactiveVideoElement] = [inactiveVideoElement, activeVideoElement];
-                            
-                            // Cleanup inactive video
-                            inactiveVideoElement.pause();
-                            inactiveVideoElement.currentTime = 0;
-                            
-                            // Reset CSS properties
-                            inactiveVideoElement.style.removeProperty('--crossfade-opacity');
-                            activeVideoElement.style.removeProperty('--crossfade-opacity');
-                            
-                            // Setup event listeners
-                            setupEventListeners(activeVideoElement);
+                        // Delayed preload update for mobile
+                        if (isDesktop) {
                             updatePreloadQueue();
-                            
-                            isTransitioning = false;
-                            
-                            announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
+                        } else {
+                            setTimeout(() => updatePreloadQueue(), CONFIG.MOBILE_PRELOAD_DELAY);
                         }
-                    };
-                    
-                    rafId = requestAnimationFrame(animateCrossfade);
-                    
-                    // Store RAF ID for potential cancellation
-                    window.currentCrossfadeRAF = rafId;
+                        
+                        isTransitioning = false;
+                        announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
+                    }
                     
                 } catch (error) {
                     errorBoundary.handleError(error, { context: 'crossFade' });
@@ -1015,13 +891,18 @@
                 }
             }
 
-            // Enhanced preloading with error handling and memory management
+            // Lightweight preloading (mobile-optimized)
             function startPreloading(url) {
                 if (preloadedVideos.has(url)) return;
                 
-                // Check memory and network before preloading
+                // Skip preloading entirely on mobile to save resources
+                if (!isDesktop) {
+                    console.log('📱 Skipping preload on mobile for performance');
+                    return;
+                }
+                
+                // Check memory before preloading (desktop only)
                 performanceMonitor.checkMemory();
-                networkOptimizer.updateConnectionAwareness();
                 
                 if (!performanceMonitor.shouldPreload()) {
                     console.log('Skipping preload due to memory pressure or buffer full');
@@ -1034,38 +915,21 @@
                 }
                 
                 try {
-                    // Use video pool for better resource management
                     const video = videoPool.acquire();
                     document.body.appendChild(video);
                     
                     video.src = url;
-                    
-                    // Start with metadata preload for faster initial response
                     video.preload = 'metadata';
                     
-                    // Use shorter timeout on mobile for faster fallback
-                    const timeoutDuration = isDesktop ? 15000 : 8000;
+                    const timeoutDuration = 10000; // Shorter timeout
                     
                     const loadPromise = new Promise((resolve, reject) => {
                         const timeout = setTimeout(() => {
                             reject(new Error('Preload timeout'));
                         }, timeoutDuration);
                         
-                        // First, wait for metadata
                         const onMetadataLoaded = () => {
                             video.removeEventListener('loadedmetadata', onMetadataLoaded);
-                            
-                            // Check if we should upgrade to full preload
-                            if (networkOptimizer.getConnectionQuality().effectiveType === '4g' && 
-                                !performanceMonitor.metrics.memoryPressure) {
-                                
-                                // Upgrade to full preload after a delay
-                                setTimeout(() => {
-                                    video.preload = 'auto';
-                                    video.load();
-                                }, 500);
-                            }
-                            
                             clearTimeout(timeout);
                             resolve(video);
                         };
@@ -1100,35 +964,45 @@
 
             function updatePreloadQueue() {
                 try {
+                    // Skip complex preload queue on mobile
+                    if (!isDesktop) {
+                        // Simple mobile cleanup - just remove any old videos
+                        const currentUrl = videoUrls[currentIndex % videoUrls.length];
+                        for (const [url, video] of preloadedVideos.entries()) {
+                            if (url !== currentUrl) {
+                                preloadedVideos.delete(url);
+                                if (video.parentNode) {
+                                    video.parentNode.removeChild(video);
+                                }
+                            }
+                        }
+                        return;
+                    }
+                    
                     const currentUrl = videoUrls[currentIndex % videoUrls.length];
                     
-                    // Check memory and network conditions
+                    // Desktop logic - simplified
                     performanceMonitor.checkMemory();
-                    networkOptimizer.updateConnectionAwareness();
                     
-                    // Clean up old preloaded videos with distance-based priority
+                    // Clean up old preloaded videos
                     for (const [url, video] of preloadedVideos.entries()) {
                         const videoIndex = videoUrls.indexOf(url);
                         const distance = (videoIndex - currentIndex + videoUrls.length) % videoUrls.length;
                         
-                        // More aggressive cleanup based on memory pressure and adaptive quality
-                        const maxDistance = performanceMonitor.metrics.memoryPressure ? 1 : 
-                                          (performanceMonitor.adaptiveQuality.currentQuality === 'low' ? 1 : preloadBufferSize);
-                        
-                        if (distance > maxDistance && url !== currentUrl) {
+                        if (distance > preloadBufferSize && url !== currentUrl) {
                             preloadedVideos.delete(url);
-                            videoPool.release(video); // Use video pool instead of direct removal
+                            videoPool.release(video);
                         }
                     }
                     
-                    // Preload upcoming videos only if conditions allow
+                    // Preload upcoming videos (desktop only)
                     if (performanceMonitor.shouldPreload() && networkOptimizer.shouldPreloadVideo(currentUrl)) {
                         for (let i = 1; i <= preloadBufferSize; i++) {
                             const nextIndex = (currentIndex + i) % videoUrls.length;
                             const nextUrl = videoUrls[nextIndex];
                             if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) {
                                 startPreloading(nextUrl);
-                                break; // Only preload one at a time to avoid memory spikes
+                                break; // Only preload one at a time
                             }
                         }
                     }
@@ -1359,7 +1233,7 @@
             function init() {
                 try {
                     showStatus("Initializing Dreams and Poems...");
-                    console.log('🎬 Starting Dreams and Poems v2.0...');
+                    console.log(`🎬 Starting Dreams and Poems v020... (${isMobile ? 'Mobile Lightweight' : 'Desktop Full-Featured'})`);
                     
                     // Load user preferences
                     userPreferences.load();
@@ -1400,11 +1274,13 @@
                         });
                     }
 
-                    // Device-specific initialization
+                    // Device-specific initialization - lightweight mobile approach
                     if (isDesktop) {
                         initializeDesktop();
+                        console.log('🖥️ Desktop full-featured initialization complete');
                     } else {
                         initializeMobile();
+                        console.log('📱 Mobile lightweight initialization complete');
                     }
 
                     // Common event listeners
@@ -1622,128 +1498,62 @@
             }
 
             function initializeMobile() {
-                console.log('📱 Initializing mobile features...');
+                console.log('📱 Initializing lightweight mobile features...');
                 
                 // Ensure autoplay is on and sound is off by default
                 autoPlayCheckbox.checked = true;
                 if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
                 videoA.muted = videoB.muted = true;
                 
-                // Viewport-aware touch optimization
-                const touchOptimizer = {
-                    touchZones: {
-                        sound: { x: 0, y: 0, width: 0.7, height: 1 }, // Left 70% for sound
-                        controls: { x: 0.7, y: 0, width: 0.3, height: 1 } // Right 30% for controls
-                    },
-                    
-                    isInZone(x, y, zone) {
-                        return x >= zone.x && x <= zone.x + zone.width &&
-                               y >= zone.y && y <= zone.y + zone.height;
-                    },
-                    
-                    getTouchZone(touch) {
-                        const x = touch.clientX / window.innerWidth;
-                        const y = touch.clientY / window.innerHeight;
-                        
-                        if (this.isInZone(x, y, this.touchZones.sound)) {
-                            return 'sound';
-                        } else if (this.isInZone(x, y, this.touchZones.controls)) {
-                            return 'controls';
-                        }
-                        return 'other';
-                    }
-                };
-                
-                // Touch interactions for video navigation and sound toggle
+                // Simple, fast touch handling for mobile
                 if (videoContainer) {
-                    // Debounced touch handling for better performance
-                    let touchDebounceTimer = null;
                     let lastTouchTime = 0;
-                    const TOUCH_DEBOUNCE_DELAY = 120; // Reduced for better responsiveness
                     
-                    // Passive touch start for UI visibility
+                    // Passive touch start for UI visibility only
                     videoContainer.addEventListener('touchstart', (e) => {
                         handleUIVisibility();
-                        // Start FPS monitoring if not already running
-                        if (!window.fpsMonitorRunning) {
-                            window.fpsMonitorRunning = true;
-                            performanceMonitor.measureFPS();
-                        }
-                    }, { passive: true, capture: false });
+                    }, { passive: true });
                     
+                    // Simple touch end handler
                     videoContainer.addEventListener('touchend', (e) => {
                         const currentTime = performance.now();
-                        if (currentTime - lastTouchTime < TOUCH_DEBOUNCE_DELAY) {
+                        if (currentTime - lastTouchTime < CONFIG.TOUCH_DEBOUNCE) {
                             return; // Ignore rapid touches
                         }
                         lastTouchTime = currentTime;
                         
-                        // Clear any pending touch actions
-                        if (touchDebounceTimer) {
-                            clearTimeout(touchDebounceTimer);
+                        // Simple touch handling - no complex zone detection
+                        const touch = e.changedTouches[0];
+                        const elementAtTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+                        
+                        // Quick exclusion check
+                        const isControlElement = elementAtTouch?.closest('.mobile-toggle-switch') ||
+                                               elementAtTouch?.closest('.about-link') ||
+                                               elementAtTouch?.closest('.portfolio-link');
+                        
+                        // Handle tap-to-resume if needed
+                        if (needsTapToResume && !isControlElement) {
+                            if (activeVideoElement) {
+                                activeVideoElement.play().then(() => {
+                                    needsTapToResume = false;
+                                    showStatus('Playing!', 1000);
+                                }).catch(err => {
+                                    console.error("Resume failed:", err);
+                                    showStatus('Tap again to play', 2000);
+                                });
+                            }
+                            return;
                         }
                         
-                        touchDebounceTimer = setTimeout(() => {
-                            // Get touch position and zone
-                            const touch = e.changedTouches[0];
-                            const touchZone = touchOptimizer.getTouchZone(touch);
-                            
-                            // Check if touch is on excluded elements
-                            const elementAtTouch = document.elementFromPoint(touch.clientX, touch.clientY);
-                            
-                            // Define excluded elements and their containers
-                            const excludedSelectors = [
-                                '.mobile-toggle-switch',
-                                '.mobile-toggle-icon', 
-                                '#mobile-auto-play-checkbox',
-                                '.about-link',
-                                '.portfolio-link',
-                                '#about-link',
-                                '#portfolio-link'
-                            ];
-                            
-                            let shouldExclude = false;
-                            for (const selector of excludedSelectors) {
-                                if (elementAtTouch?.closest(selector) || elementAtTouch?.matches(selector)) {
-                                    shouldExclude = true;
-                                    break;
-                                }
-                            }
-                            
-                            // Handle tap-to-resume if needed
-                            if (needsTapToResume && !shouldExclude) {
-                                if (activeVideoElement) {
-                                    activeVideoElement.play().then(() => {
-                                        needsTapToResume = false;
-                                        showStatus('Playback started!', 1000);
-                                    }).catch(err => {
-                                        console.error("Resume failed:", err);
-                                        showStatus('Tap again to enable playback', 3000);
-                                    });
-                                }
-                                return;
-                            }
-                            
-                            // Zone-based interactions
-                            if (!shouldExclude) {
-                                if (touchZone === 'sound') {
-                                    console.log('📱 Sound zone touch detected');
-                                    toggleSound(true); // Show visual feedback
-                                } else if (touchZone === 'controls') {
-                                    console.log('📱 Controls zone touch detected');
-                                    // Could add future control interactions here
-                                } else {
-                                    // Default behavior for other areas
-                                    toggleSound(true);
-                                }
-                            }
-                            
-                            // Always show controls on tap
-                            handleUIVisibility();
-                        }, 30); // Reduced delay for better responsiveness
-                    }, { passive: true, capture: false });
+                        // Simple sound toggle
+                        if (!isControlElement) {
+                            toggleSound(true);
+                        }
+                        
+                        handleUIVisibility();
+                    }, { passive: true });
                     
-                    // Prevent context menu on long press
+                    // Prevent context menu
                     videoContainer.addEventListener('contextmenu', (e) => e.preventDefault());
                 }
             }
