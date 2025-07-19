@@ -1,14 +1,13 @@
 {
-  "version": "021",
-  "name": "Performance Error Fixes",
+  "version": "022",
+  "name": "Updated Desktop Video Assets",
   "features": [
-    "Fixed all performance monitoring errors",
-    "Removed references to non-existent adaptiveQuality methods",
-    "Simplified performance monitoring for mobile",
-    "Fixed FPS monitoring and network optimizer references",
-    "Cleaned up getStatus and getPerformanceReport functions",
-    "Added basic memory check method for stability",
-    "Mobile-first optimization maintained"
+    "Updated desktop video URLs with new escob.art_hor_ naming pattern",
+    "Maintained complete randomization system (shuffle + random start)",
+    "All performance optimizations preserved",
+    "Mobile-first optimization continues",
+    "Enhanced video asset organization",
+    "Improved content delivery structure"
   ],
   "date": "2024"
 }
