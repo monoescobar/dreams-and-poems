@@ -337,7 +337,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v022">v022</span>
+            <span class="desktop-version-number" aria-label="Application version v023">v023</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -351,7 +351,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v022">v022</span>
+        <span class="mobile-version-number" aria-label="Application version v023">v023</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -371,9 +371,9 @@
     <script>
         console.log('🎬 Dreams and Poems script loading...');
         
-        // Enhanced Dreams and Poems Application v022
+        // Enhanced Dreams and Poems Application v023
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎬 Dreams and Poems v022 - Starting initialization...');
+            console.log('🎬 Dreams and Poems v023 - Starting initialization...');
             
             // Configuration with mobile-first optimizations
             const CONFIG = {
@@ -863,29 +863,66 @@
                         
                         requestAnimationFrame(animateCrossfade);
                     } else {
-                        // Simple CSS transition for mobile - much lighter
-                        inactiveVideoElement.style.transition = `opacity ${crossfadeDuration}ms ease-out`;
-                        activeVideoElement.style.transition = `opacity ${crossfadeDuration}ms ease-out`;
+                        // Enhanced mobile crossfade - fix audio sync issues
+                        console.log('📱 Starting mobile crossfade...');
                         
+                        // Immediately pause the old video to prevent audio overlap
+                        if (activeVideoElement && !activeVideoElement.paused) {
+                            activeVideoElement.pause();
+                        }
+                        
+                        // Ensure new video is ready and playing
+                        if (inactiveVideoElement.readyState >= 2) {
+                            inactiveVideoElement.currentTime = 0;
+                            
+                            // Start the new video first
+                            const playPromise = inactiveVideoElement.play();
+                            if (playPromise) {
+                                playPromise.catch(e => console.log('Mobile play failed:', e));
+                            }
+                        }
+                        
+                        // Use immediate transition for mobile to avoid sync issues
+                        inactiveVideoElement.style.transition = 'none';
+                        activeVideoElement.style.transition = 'none';
+                        
+                        // Immediate swap for mobile - no fade to prevent audio issues
                         inactiveVideoElement.style.opacity = '1';
                         activeVideoElement.style.opacity = '0';
                         
+                        // Complete crossfade immediately on mobile
                         setTimeout(() => {
                             completeCrossfade();
-                        }, crossfadeDuration);
+                        }, 50); // Very short delay just to ensure DOM updates
                     }
                     
                     function completeCrossfade() {
+                        console.log('📱 Completing crossfade...');
+                        
                         // Swap elements
                         [activeVideoElement, inactiveVideoElement] = [inactiveVideoElement, activeVideoElement];
                         
-                        // Cleanup inactive video
-                        inactiveVideoElement.pause();
-                        inactiveVideoElement.currentTime = 0;
+                        // Enhanced mobile cleanup - ensure old video is completely stopped
+                        if (inactiveVideoElement) {
+                            inactiveVideoElement.pause();
+                            inactiveVideoElement.currentTime = 0;
+                            
+                            // On mobile, also clear the src to free up memory
+                            if (!isDesktop) {
+                                setTimeout(() => {
+                                    if (inactiveVideoElement && inactiveVideoElement !== activeVideoElement) {
+                                        inactiveVideoElement.src = '';
+                                        inactiveVideoElement.load();
+                                    }
+                                }, 100);
+                            }
+                        }
                         
                         // Reset styles
                         inactiveVideoElement.style.transition = '';
                         activeVideoElement.style.transition = '';
+                        inactiveVideoElement.style.opacity = '0';
+                        activeVideoElement.style.opacity = '1';
                         
                         // Setup event listeners
                         setupEventListeners(activeVideoElement);
@@ -899,6 +936,8 @@
                         
                         isTransitioning = false;
                         announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
+                        
+                        console.log(`✅ Video ${currentIndex + 1} active, previous video cleaned up`);
                     }
                     
                 } catch (error) {
@@ -914,6 +953,12 @@
                 // Skip preloading entirely on mobile to save resources
                 if (!isDesktop) {
                     console.log('📱 Skipping preload on mobile for performance');
+                    return;
+                }
+                
+                // Check if URL was previously marked as failed
+                if (window.VIDEO_ERROR_HANDLER && window.VIDEO_ERROR_HANDLER.shouldSkipUrl(url)) {
+                    console.log('⚠️ Skipping preload for previously failed URL:', url.split('/').pop());
                     return;
                 }
                 
@@ -954,7 +999,14 @@
                             clearTimeout(timeout);
                             video.removeEventListener('loadedmetadata', onMetadataLoaded);
                             video.removeEventListener('error', onError);
-                            reject(e.error || new Error('Preload failed'));
+                            
+                            // Use enhanced error handler if available
+                            const error = e.error || new Error('Preload failed');
+                            if (window.VIDEO_ERROR_HANDLER) {
+                                window.VIDEO_ERROR_HANDLER.logError(url, error);
+                            }
+                            
+                            reject(error);
                         };
                         
                         video.addEventListener('loadedmetadata', onMetadataLoaded, { once: true });
@@ -969,28 +1021,74 @@
                             console.log('✅ Preloaded:', url.split('/').pop());
                         }
                     }).catch(error => {
-                        console.warn('⚠️ Preload failed:', url.split('/').pop(), error.message);
+                        const videoName = url.split('/').pop();
+                        console.warn('⚠️ Preload failed:', videoName, error.message);
+                        
+                        // Log specific error types
+                        if (error.message.includes('404') || error.message.includes('not found')) {
+                            console.error(`❌ Video file missing: ${videoName}`);
+                        } else if (error.message.includes('timeout')) {
+                            console.warn(`⏱️ Preload timeout: ${videoName}`);
+                        }
+                        
                         videoPool.release(video);
                     });
                     
                 } catch (error) {
-                    console.warn('⚠️ Preloading setup failed:', url.split('/').pop(), error.message);
+                    const videoName = url.split('/').pop();
+                    console.warn('⚠️ Preloading setup failed:', videoName, error.message);
+                    
+                    // Use enhanced error handler
+                    if (window.VIDEO_ERROR_HANDLER) {
+                        window.VIDEO_ERROR_HANDLER.logError(url, error);
+                    }
                 }
             }
 
             function updatePreloadQueue() {
                 try {
-                    // Skip complex preload queue on mobile
+                    // Enhanced mobile cleanup to prevent video conflicts
                     if (!isDesktop) {
-                        // Simple mobile cleanup - just remove any old videos
+                        console.log('📱 Mobile cleanup - preventing video conflicts...');
                         const currentUrl = videoUrls[currentIndex % videoUrls.length];
+                        let cleanedCount = 0;
+                        
+                        // More aggressive mobile cleanup
                         for (const [url, video] of preloadedVideos.entries()) {
                             if (url !== currentUrl) {
                                 preloadedVideos.delete(url);
+                                
+                                // Ensure video is completely stopped
+                                if (video) {
+                                    video.pause();
+                                    video.currentTime = 0;
+                                    video.src = '';
+                                    video.load();
+                                    
+                                    if (video.parentNode) {
+                                        video.parentNode.removeChild(video);
+                                    }
+                                }
+                                cleanedCount++;
+                            }
+                        }
+                        
+                        // Also clean up any orphaned video elements on mobile
+                        const allVideos = document.querySelectorAll('video');
+                        allVideos.forEach(video => {
+                            if (video !== videoA && video !== videoB && video !== activeVideoElement && video !== inactiveVideoElement) {
+                                console.log('📱 Removing orphaned video element');
+                                video.pause();
+                                video.src = '';
+                                video.load();
                                 if (video.parentNode) {
                                     video.parentNode.removeChild(video);
                                 }
                             }
+                        });
+                        
+                        if (cleanedCount > 0) {
+                            console.log(`📱 Mobile cleanup: removed ${cleanedCount} videos`);
                         }
                         return;
                     }
@@ -1050,6 +1148,31 @@
             function handleTimeUpdate() {
                 if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
                 
+                // Mobile-specific checks to prevent audio/video sync issues
+                if (!isDesktop) {
+                    // On mobile, ensure the video is actually playing and visible
+                    if (activeVideoElement.paused || activeVideoElement.currentTime === 0) {
+                        return; // Don't advance if video isn't properly playing
+                    }
+                    
+                    // Check if video seems stuck (same currentTime for too long)
+                    if (!handleTimeUpdate.lastTime) handleTimeUpdate.lastTime = 0;
+                    if (!handleTimeUpdate.stuckCount) handleTimeUpdate.stuckCount = 0;
+                    
+                    if (Math.abs(activeVideoElement.currentTime - handleTimeUpdate.lastTime) < 0.1) {
+                        handleTimeUpdate.stuckCount++;
+                        if (handleTimeUpdate.stuckCount > 10) { // Video seems stuck
+                            console.log('📱 Video appears stuck, forcing next video');
+                            handleTimeUpdate.stuckCount = 0;
+                            playNextContent();
+                            return;
+                        }
+                    } else {
+                        handleTimeUpdate.stuckCount = 0;
+                    }
+                    handleTimeUpdate.lastTime = activeVideoElement.currentTime;
+                }
+                
                 const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
                 if (timeRemaining < 3.2 && timeRemaining > 0) {
                     playNextContent();
@@ -1058,13 +1181,64 @@
 
             function handleVideoError(e) {
                 const error = e.error || e.target?.error || new Error('Video load failed');
+                const videoUrl = e.target?.src || activeVideoElement?.currentSrc || 'unknown';
+                const videoName = videoUrl.split('/').pop() || 'unknown';
+                
+                // Enhanced error logging with HTTP status detection
+                let statusCode = null;
+                let errorMessage = error.message || 'Unknown video error';
+                
+                // Try to extract HTTP status from error
+                if (error.message && error.message.includes('404')) {
+                    statusCode = 404;
+                    errorMessage = `Video file not found: ${videoName}`;
+                } else if (error.message && error.message.includes('403')) {
+                    statusCode = 403;
+                    errorMessage = `Access denied to video: ${videoName}`;
+                } else if (error.code === 4) { // MEDIA_ELEMENT_ERROR: MEDIA_ERR_SRC_NOT_SUPPORTED
+                    statusCode = 404;
+                    errorMessage = `Video format not supported or file missing: ${videoName}`;
+                }
+                
+                // Use enhanced error handler if available
+                if (window.VIDEO_ERROR_HANDLER) {
+                    const isRealError = window.VIDEO_ERROR_HANDLER.logError(videoUrl, error, statusCode);
+                    
+                    // If it's just a 304 (not modified), don't treat as error
+                    if (!isRealError) {
+                        console.log('✅ 304 Not Modified - video is cached, continuing normally');
+                        return;
+                    }
+                }
+                
+                // Log detailed error information
+                console.group(`🚨 Video Error Details`);
+                console.log(`Video: ${videoName}`);
+                console.log(`URL: ${videoUrl}`);
+                console.log(`Error Code: ${error.code || 'N/A'}`);
+                console.log(`Error Message: ${errorMessage}`);
+                console.log(`Ready State: ${e.target?.readyState || 'N/A'}`);
+                console.log(`Network State: ${e.target?.networkState || 'N/A'}`);
+                if (statusCode) {
+                    console.log(`HTTP Status: ${statusCode}`);
+                }
+                console.groupEnd();
+                
                 errorBoundary.handleError(error, { 
                     context: 'videoError', 
-                    src: e.target?.src || activeVideoElement?.currentSrc,
-                    readyState: e.target?.readyState 
+                    src: videoUrl,
+                    readyState: e.target?.readyState,
+                    networkState: e.target?.networkState,
+                    statusCode: statusCode,
+                    videoName: videoName
                 });
                 
-                showStatus('Video error. Loading next...', 3000);
+                // Show user-friendly error message
+                if (statusCode === 404) {
+                    showStatus(`Video ${videoName} not found. Skipping...`, 3000);
+                } else {
+                    showStatus(`Video error: ${videoName}. Loading next...`, 3000);
+                }
                 
                 // Try next video after delay
                 setTimeout(() => {
@@ -1249,7 +1423,7 @@
             function init() {
                 try {
                     showStatus("Initializing Dreams and Poems...");
-                    console.log(`🎬 Starting Dreams and Poems v022... (${!isDesktop ? 'Mobile Lightweight' : 'Desktop Full-Featured'})`);
+                    console.log(`🎬 Starting Dreams and Poems v023... (${!isDesktop ? 'Mobile Lightweight' : 'Desktop Full-Featured'})`);
                     
                     // Load user preferences
                     userPreferences.load();
@@ -1515,6 +1689,50 @@
                 if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
                 videoA.muted = videoB.muted = true;
                 
+                // Mobile video state monitoring to prevent audio/video sync issues
+                let mobileVideoMonitor;
+                
+                function startMobileVideoMonitoring() {
+                    if (mobileVideoMonitor) clearInterval(mobileVideoMonitor);
+                    
+                    mobileVideoMonitor = setInterval(() => {
+                        if (!activeVideoElement || isTransitioning) return;
+                        
+                        // Check for ghost audio (audio playing but video stopped)
+                        if (!activeVideoElement.paused && activeVideoElement.currentTime > 0) {
+                            const videoElement = activeVideoElement;
+                            
+                            // Check if video element seems broken
+                            if (videoElement.readyState === 0 || videoElement.error) {
+                                console.log('📱 Video element broken, forcing next video');
+                                playNextContent();
+                                return;
+                            }
+                            
+                            // Check for audio without video progression
+                            if (!startMobileVideoMonitoring.lastTime) startMobileVideoMonitoring.lastTime = 0;
+                            if (Math.abs(videoElement.currentTime - startMobileVideoMonitoring.lastTime) < 0.05) {
+                                if (!startMobileVideoMonitoring.stuckCounter) startMobileVideoMonitoring.stuckCounter = 0;
+                                startMobileVideoMonitoring.stuckCounter++;
+                                
+                                if (startMobileVideoMonitoring.stuckCounter > 8) { // 4 seconds of being stuck
+                                    console.log('📱 Video stuck, forcing cleanup and next video');
+                                    videoElement.pause();
+                                    videoElement.currentTime = 0;
+                                    startMobileVideoMonitoring.stuckCounter = 0;
+                                    playNextContent();
+                                }
+                            } else {
+                                startMobileVideoMonitoring.stuckCounter = 0;
+                            }
+                            startMobileVideoMonitoring.lastTime = videoElement.currentTime;
+                        }
+                    }, 500); // Check every 500ms
+                }
+                
+                // Start monitoring after initialization
+                setTimeout(startMobileVideoMonitoring, 2000);
+                
                 // Simple, fast touch handling for mobile
                 if (videoContainer) {
                     let lastTouchTime = 0;
@@ -1656,7 +1874,83 @@
                 })
             };
             
-            console.log('✅ Dreams and Poems v022 initialized successfully!');
+            console.log('✅ Dreams and Poems v023 initialized successfully!');
+            
+            // Add debugging tools to global scope for troubleshooting 304/404 errors
+            window.debugTools = {
+                // Test video URL availability
+                async testVideoUrls(count = 5) {
+                    console.log('🔍 Testing video URL availability...');
+                    const urls = isDesktop ? videoUrls.slice(0, count) : videoUrls.slice(0, count);
+                    
+                    if (window.VIDEO_URL_VALIDATOR) {
+                        const results = await window.VIDEO_URL_VALIDATOR.testBatch(urls, 3, 500);
+                        
+                        console.group('📊 Video URL Test Results');
+                        results.forEach(result => {
+                            const videoName = result.url.split('/').pop();
+                            if (result.valid) {
+                                console.log(`✅ ${videoName} - Status: ${result.status}`);
+                            } else {
+                                console.error(`❌ ${videoName} - Status: ${result.status} - ${result.message}`);
+                            }
+                        });
+                        console.groupEnd();
+                        
+                        return results;
+                    } else {
+                        console.warn('Video URL validator not available');
+                    }
+                },
+                
+                // Get error summary
+                getErrorSummary() {
+                    if (window.VIDEO_ERROR_HANDLER) {
+                        const summary = window.VIDEO_ERROR_HANDLER.getSummary();
+                        console.group('📈 Video Error Summary');
+                        console.log(`Total Failed Videos: ${summary.totalFailed}`);
+                        console.log(`Total Retries: ${summary.totalRetries}`);
+                        if (summary.failedUrls.length > 0) {
+                            console.log('Failed URLs:', summary.failedUrls);
+                        }
+                        console.groupEnd();
+                        return summary;
+                    }
+                },
+                
+                // Reset error tracking
+                resetErrors() {
+                    if (window.VIDEO_ERROR_HANDLER) {
+                        window.VIDEO_ERROR_HANDLER.reset();
+                        console.log('🔄 Error tracking reset');
+                    }
+                },
+                
+                // Force test a specific video
+                async testSpecificVideo(videoIndex) {
+                    const url = videoUrls[videoIndex];
+                    if (!url) {
+                        console.error(`No video at index ${videoIndex}`);
+                        return;
+                    }
+                    
+                    console.log(`🔍 Testing video ${videoIndex}: ${url.split('/').pop()}`);
+                    if (window.VIDEO_URL_VALIDATOR) {
+                        const result = await window.VIDEO_URL_VALIDATOR.testUrl(url);
+                        console.log('Test result:', result);
+                        return result;
+                    }
+                }
+            };
+            
+            // Log helpful debugging instructions
+            console.group('🛠️ Debugging Tools Available');
+            console.log('Use these commands in the console to diagnose 304/404 errors:');
+            console.log('📍 debugTools.testVideoUrls(10) - Test first 10 video URLs');
+            console.log('📈 debugTools.getErrorSummary() - View error statistics');
+            console.log('🔄 debugTools.resetErrors() - Reset error tracking');
+            console.log('🎯 debugTools.testSpecificVideo(5) - Test specific video by index');
+            console.groupEnd();
         });
     </script>
     

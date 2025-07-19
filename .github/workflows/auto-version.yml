@@ -1,0 +1,78 @@
+name: Auto Version Bump
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Check for version changes
+      id: check-version
+      run: |
+        if [ -f "version.json" ]; then
+          VERSION=$(cat version.json | grep -o '"version": *"[^"]*"' | grep -o '[^"]*"$' | sed 's/"$//')
+          echo "current-version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+        else
+          echo "current-version=v001" >> $GITHUB_OUTPUT
+          echo "Version file not found, starting with v001"
+        fi
+    
+    - name: Update version file
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        # This is a placeholder for version bump logic
+        # Version updates are handled manually in this project
+        echo "Version management handled manually"
+    
+    - name: Validate project files
+      run: |
+        echo "Validating Dreams and Poems project..."
+        
+        # Check if main files exist
+        if [ ! -f "index.html" ]; then
+          echo "Error: index.html not found"
+          exit 1
+        fi
+        
+        if [ ! -f "version.json" ]; then
+          echo "Error: version.json not found"
+          exit 1
+        fi
+        
+        if [ ! -f "video-urls.js" ]; then
+          echo "Error: video-urls.js not found"
+          exit 1
+        fi
+        
+        echo "✅ All required files present"
+        
+        # Validate JSON files
+        if command -v jq &> /dev/null; then
+          echo "Validating JSON files..."
+          cat version.json | jq . > /dev/null || (echo "Invalid version.json" && exit 1)
+          echo "✅ JSON files valid"
+        fi
+        
+        echo "✅ Project validation complete"
