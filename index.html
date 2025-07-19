@@ -337,7 +337,7 @@
                     <span class="sr-only">Press A to toggle autoplay</span>
                 </label>
             </div>
-            <span class="desktop-version-number" aria-label="Application version v020">v020</span>
+            <span class="desktop-version-number" aria-label="Application version v021">v021</span>
         </div>
         
         <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
@@ -351,7 +351,7 @@
         </div>
         
         <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v020">v020</span>
+        <span class="mobile-version-number" aria-label="Application version v021">v021</span>
         
         <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
            id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
@@ -371,9 +371,9 @@
     <script>
         console.log('🎬 Dreams and Poems script loading...');
         
-        // Enhanced Dreams and Poems Application v2.0
+        // Enhanced Dreams and Poems Application v021
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎬 Dreams and Poems v2.0 - Starting initialization...');
+            console.log('🎬 Dreams and Poems v021 - Starting initialization...');
             
             // Configuration with mobile-first optimizations
             const CONFIG = {
@@ -666,6 +666,22 @@
                         return !this.metrics.memoryPressure && preloadedVideos.size === 0;
                     }
                     return !this.metrics.memoryPressure && preloadedVideos.size < preloadBufferSize;
+                },
+                
+                // Basic memory check for simplified monitoring
+                checkBasicMemory() {
+                    if (performance.memory) {
+                        this.memoryUsage = performance.memory.usedJSHeapSize;
+                        this.metrics.memoryPressure = this.memoryUsage > CONFIG.MAX_PRELOAD_MEMORY;
+                        
+                        if (this.metrics.memoryPressure) {
+                            if (isDesktop) {
+                                this.aggressiveCleanup();
+                            } else {
+                                this.mobileCleanup();
+                            }
+                        }
+                    }
                 }
             };
             
@@ -1233,7 +1249,7 @@
             function init() {
                 try {
                     showStatus("Initializing Dreams and Poems...");
-                    console.log(`🎬 Starting Dreams and Poems v020... (${isMobile ? 'Mobile Lightweight' : 'Desktop Full-Featured'})`);
+                    console.log(`🎬 Starting Dreams and Poems v021... (${!isDesktop ? 'Mobile Lightweight' : 'Desktop Full-Featured'})`);
                     
                     // Load user preferences
                     userPreferences.load();
@@ -1355,20 +1371,14 @@
                             setTimeout(() => {
                                 updatePreloadQueue();
                                 
-                                // Start comprehensive performance monitoring
-                                setInterval(() => {
-                                    performanceMonitor.checkMemory();
-                                    networkOptimizer.updateConnectionAwareness();
-                                    performanceMonitor.adaptiveQuality.checkAndAdjust();
-                                }, 15000); // Check every 15 seconds
-                                
-                                // Start FPS monitoring
-                                if (!window.fpsMonitorRunning) {
-                                    window.fpsMonitorRunning = true;
-                                    performanceMonitor.measureFPS();
+                                // Simple performance monitoring for desktop only
+                                if (isDesktop) {
+                                    setInterval(() => {
+                                        performanceMonitor.checkMemory();
+                                    }, 15000); // Check every 15 seconds
                                 }
                                 
-                                // Cleanup video pool periodically
+                                // Basic cleanup for video pool periodically
                                 setInterval(() => {
                                     if (performanceMonitor.metrics.memoryPressure) {
                                         videoPool.cleanup();
@@ -1584,9 +1594,9 @@
                     performance: {
                         memoryUsage: performanceMonitor.memoryUsage,
                         memoryPressure: performanceMonitor.metrics.memoryPressure,
-                        lastCleanup: performanceMonitor.lastCleanup,
-                        frameDrops: performanceMonitor.metrics.frameDrops
-                    }
+                        lastCleanup: performanceMonitor.lastCleanup
+                    },
+                    deviceType: isDesktop ? 'Desktop' : 'Mobile'
                 }),
                 
                 // Performance monitoring methods
@@ -1597,13 +1607,6 @@
                         limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + 'MB',
                         pressure: performanceMonitor.metrics.memoryPressure
                     } : 'Not available',
-                    fps: Math.round(performanceMonitor.metrics.fps * 10) / 10,
-                    frameDrops: performanceMonitor.metrics.frameDrops,
-                    quality: performanceMonitor.adaptiveQuality.currentQuality,
-                    network: {
-                        type: networkOptimizer.connectionQuality,
-                        quality: networkOptimizer.getConnectionQuality()
-                    },
                     preloaded: Array.from(preloadedVideos.keys()).map(url => url.split('/').pop()),
                     bufferHealth: `${preloadedVideos.size}/${preloadBufferSize}`,
                     videoPool: {
@@ -1625,32 +1628,35 @@
                     }
                 },
                 
-                // Performance optimization controls
+                // Simplified performance controls (mobile-compatible)
                 setQuality: (quality) => {
-                    if (['low', 'medium', 'high'].includes(quality)) {
-                        performanceMonitor.adaptiveQuality.currentQuality = quality;
-                        performanceMonitor.adaptiveQuality.checkAndAdjust();
-                        console.log(`🎛️ Quality manually set to: ${quality}`);
+                    if (['low', 'medium', 'high'].includes(quality) && isDesktop) {
+                        console.log(`🎛️ Quality setting: ${quality} (desktop only)`);
+                        // Quality control disabled on mobile for performance
+                    } else {
+                        console.log('🎛️ Quality control not available on mobile');
                     }
                 },
                 
-                // Network simulation for testing
-                simulateNetwork: (type) => {
-                    networkOptimizer.connectionQuality = type;
-                    networkOptimizer.updateConnectionAwareness();
-                    console.log(`📡 Network simulated: ${type}`);
+                // Basic network info (simplified)
+                getNetworkInfo: () => {
+                    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                    return {
+                        type: connection?.effectiveType || 'unknown',
+                        saveData: connection?.saveData || false
+                    };
                 },
                 
-                // Get detailed performance metrics
+                // Get basic performance metrics (mobile-optimized)
                 getDetailedMetrics: () => ({
                     ...window.dreamsAndPoemsApp.getPerformanceReport(),
-                    loadTimes: performanceMonitor.metrics.loadTimes,
-                    memoryHistory: performanceMonitor.memoryHistory || [],
-                    fpsHistory: performanceMonitor.fpsHistory || []
+                    memoryUsage: performanceMonitor.memoryUsage,
+                    deviceType: isDesktop ? 'Desktop' : 'Mobile',
+                    optimizationLevel: isDesktop ? 'Full' : 'Lightweight'
                 })
             };
             
-            console.log('✅ Dreams and Poems v2.0 initialized successfully!');
+            console.log('✅ Dreams and Poems v021 initialized successfully!');
         });
     </script>
     
