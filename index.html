@@ -1,2094 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dreams and Poems ✨</title>
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
-    
-    <!-- Meta tags for SEO and social sharing -->
-    <meta name="description" content="Dreams and Poems - An immersive visual poetry experience by Carlos Escobar. Explore abstract and surreal video content that combines art, technology, and emotion.">
-    <meta name="keywords" content="visual poetry, dreams, poems, Carlos Escobar, video art, digital art, interactive experience">
-    <meta name="author" content="Carlos Escobar">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://github.com/monoescobar/dreams-and-poems">
-    <meta property="og:title" content="Dreams and Poems ✨">
-    <meta property="og:description" content="An immersive visual poetry experience combining abstract video content with interactive storytelling.">
-    <meta property="og:image" content="icon-512x512.png">
-    <meta property="og:image:width" content="512">
-    <meta property="og:image:height" content="512">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://github.com/monoescobar/dreams-and-poems">
-    <meta property="twitter:title" content="Dreams and Poems ✨">
-    <meta property="twitter:description" content="An immersive visual poetry experience combining abstract video content with interactive storytelling.">
-    <meta property="twitter:image" content="icon-512x512.png">
-    
-    <!-- PWA Manifest and Meta Tags -->
-    <link rel="manifest" href="manifest.json?v=008">
-    
-    <!-- iOS Safari PWA support -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Dreams ✨">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    
-    <!-- Android Chrome PWA support -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-    <meta name="msapplication-TileColor" content="#000000">
-    <meta name="msapplication-config" content="browserconfig.xml">
-    
-    <!-- Prevent automatic phone number detection -->
-    <meta name="format-detection" content="telephone=no">
-    
-    <!-- Performance optimization -->
-    <link rel="preconnect" href="https://filedn.com">
-    <link rel="dns-prefetch" href="https://filedn.com">
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="src/styles/main.css" as="style">
-    <link rel="preload" href="video-urls.js" as="script">
-    
-    <!-- Load external CSS and JS -->
-    <link rel="stylesheet" href="src/styles/main.css">
-    <script src="video-urls.js"></script>
-    
-    <!-- Loading animation styles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreams and Poems</title>
     <style>
-        .loading-content {
-            text-align: center;
-            animation: pulse 2s infinite;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+
+        body {
+            background: #000;
+            overflow: hidden;
+            height: 100vh;
+            font-family: Arial, sans-serif;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
         }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        
-        .primary-button {
-            background: #3b82f6;
+
+        #controls {
+            display: none;
+        }
+
+        #device-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            margin: 8px;
-            transition: background 0.2s;
-        }
-        
-        .primary-button:hover {
-            background: #2563eb;
-        }
-        
-        .secondary-button {
-            background: transparent;
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            padding: 10px 22px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 8px;
-            transition: all 0.2s;
-        }
-        
-        .secondary-button:hover {
-            border-color: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
         }
-        
-        #status-indicator {
-            position: fixed;
+
+        #device-info.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #sound-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #sound-notification.show {
+            opacity: 1;
+        }
+
+        #sound-notification .icon {
+            font-size: 24px;
+            filter: grayscale(100%);
+        }
+
+        #loading {
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
             font-size: 18px;
-            text-align: center;
-            z-index: 1000;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 12px 20px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .mobile-loading.visible {
-            opacity: 1;
-        }
-        
-        /* Mobile Controls Styling */
-        .mobile-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1001;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-        
-        .mobile-controls.ui-visible {
-            opacity: 1;
-            pointer-events: all;
-        }
-        
-        .mobile-control-bar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: transparent;
-            backdrop-filter: none;
-            border-radius: 22px;
-            padding: 6px 26px;
-            border: none;
-        }
-        
-        .mobile-control-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.4);
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 0;
-            min-width: 36px;
-            min-height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease, color 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .mobile-control-btn:hover,
-        .mobile-control-btn:focus {
-            transform: scale(1.1);
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .mobile-control-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .mobile-toggle-switch {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.4);
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 0;
-            transition: transform 0.2s ease, color 0.2s ease;
-            min-height: 36px;
-            min-width: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .mobile-toggle-switch:hover,
-        .mobile-toggle-switch:focus {
-            transform: scale(1.1);
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .mobile-toggle-switch:active {
-            transform: scale(0.95);
-        }
-        
-        .mobile-toggle-switch input {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            cursor: pointer;
-        }
-        
-        .mobile-toggle-icon {
-            width: 32px;
-            height: 16px;
-            background-color: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            position: relative;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-            pointer-events: none;
-        }
-        
-        .mobile-toggle-icon::after {
-            content: '';
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: white;
-            top: 1px;
-            left: 1px;
-            transition: transform 0.3s ease;
-        }
-        
-        .mobile-toggle-switch input:checked + .mobile-toggle-icon {
-            background-color: #6B7280;
-            border-color: #6B7280;
-        }
-        
-        .mobile-toggle-switch input:checked + .mobile-toggle-icon::after {
-            transform: translateX(16px);
-        }
-        
-        .mobile-version-number {
-            color: rgba(255, 255, 255, 0.1);
-            font-size: 12px;
-            text-align: right;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: none;
-            z-index: 1002;
-        }
-        
-        .desktop-version-number {
-            color: rgba(255, 255, 255, 0.2);
-            font-size: 12px;
-            text-align: right;
-            position: fixed;
-            top: var(--spacing-lg);
-            right: var(--spacing-lg);
-            display: block;
-        }
-        
-        /* Show mobile controls only on mobile */
-        @media (max-width: 768px) {
-            .desktop-controls {
-                display: none !important;
-            }
-            
-            .mobile-controls {
-                display: block;
-            }
-            
-            .mobile-version-number {
-                display: block;
-            }
-            
-            .desktop-version-number {
-                display: none;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .mobile-controls {
-                display: none !important;
-            }
-            
-            .mobile-version-number {
-                display: none;
-            }
-            
-            .desktop-version-number {
-                display: block;
-            }
+            z-index: 20;
         }
     </style>
 </head>
-
 <body>
-    <!-- Skip link for accessibility -->
-    <a href="#main-content" class="sr-only sr-only-focusable">Skip to main content</a>
-
-    <div id="video-container" role="main" aria-label="Dreams and Poems video player">
-        <video id="video-a" class="video-player" playsinline muted aria-label="Dreams and Poems video content"></video>
-        <video id="video-b" class="video-player" playsinline muted aria-label="Dreams and Poems video content"></video>
-    </div>
-
-    <div id="ui-overlay" class="ui-overlay">
-        <div class="desktop-controls" role="navigation" aria-label="Video player controls">
-            <div class="control-bar">
-                <button id="toggle-sound-btn" type="button" class="control-btn" title="Mute (M)" aria-label="Toggle sound (M)"></button>
-                <button id="fullscreen-btn" type="button" class="control-btn" title="Fullscreen (F)" aria-label="Toggle fullscreen (F)"></button>
-                <label class="toggle-switch" role="switch" aria-label="Toggle autoplay (A)" tabindex="0">
-                    <input type="checkbox" id="auto-play-checkbox" checked>
-                    <span class="toggle-icon"></span>
-                    <span class="sr-only">Press A to toggle autoplay</span>
-                </label>
-            </div>
-            <span class="desktop-version-number" aria-label="Application version v024">v024</span>
-        </div>
-        
-        <div class="mobile-controls" role="navigation" aria-label="Mobile video player controls">
-            <div class="mobile-control-bar">
-                <label class="mobile-toggle-switch" role="switch" aria-label="Toggle autoplay" tabindex="0">
-                    <input type="checkbox" id="mobile-auto-play-checkbox" checked>
-                    <span class="mobile-toggle-icon"></span>
-                    <span class="sr-only">Toggle autoplay</span>
-                </label>
-            </div>
-        </div>
-        
-        <!-- Mobile version number positioned independently in top-right corner -->
-        <span class="mobile-version-number" aria-label="Application version v024">v024</span>
-        
-        <a href="https://www.linkedin.com/in/carlos-escobar-32156b24/" target="_blank" rel="noopener noreferrer" 
-           id="about-link" class="nav-link about-link" aria-label="About Carlos Escobar - Opens LinkedIn profile">About</a>
-        
-        <a href="https://filedn.com/lHC6pEBkEzyQnHC8rtghiku/Carlos_Escobar.pdf" target="_blank" rel="noopener noreferrer"
-           id="portfolio-link" class="nav-link portfolio-link" aria-label="View Portfolio - Opens PDF document">Portfolio</a>
-        
-        <div id="gesture-feedback" aria-live="polite" aria-atomic="true" role="status">
-            <div id="gesture-icon" aria-hidden="true"></div>
-            <div id="gesture-text"></div>
-        </div>
-    </div>
-
-    <div id="status-indicator" aria-live="polite" aria-atomic="true" style="opacity: 0;"></div>
-
-    <!-- Load application with enhanced features -->
-    <script>
-        console.log('🎬 Dreams and Poems script loading...');
-        
-        // Enhanced Dreams and Poems Application v024
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎬 Dreams and Poems v024 - Starting initialization...');
-            
-            // Configuration with mobile-first optimizations
-            const CONFIG = {
-                PRELOAD_BUFFER_SIZE_DESKTOP: 2,
-                PRELOAD_BUFFER_SIZE_MOBILE: 1,  // Keep minimal for mobile
-                CROSSFADE_DURATION: 1500,
-                CROSSFADE_DURATION_MOBILE: 600, // Much faster mobile transitions
-                UI_TIMEOUT: 3000,
-                videoUrls: window.VIDEO_URLS || VIDEO_URLS,
-                // Mobile-specific optimizations
-                MOBILE_MEMORY_LIMIT: 30 * 1024 * 1024, // 30MB limit for mobile
-                MOBILE_PRELOAD_DELAY: 1000, // Delay preloading on mobile
-                TOUCH_DEBOUNCE: 100 // Faster touch response
-            };
-
-            // Enhanced error handling
-            const errorBoundary = {
-                errors: [],
-                maxErrors: 10,
-                
-                handleError(error, context = {}) {
-                    this.errors.push({ error, context, timestamp: Date.now() });
-                    console.error('Application error:', error, context);
-                    
-                    // Show visual error message
-                    this.showVisualError(error, context);
-                    
-                    // Store in localStorage for debugging
-                    try {
-                        const stored = JSON.parse(localStorage.getItem('dreamsAndPoems.errors') || '[]');
-                        stored.push({ message: error.message, context, timestamp: Date.now() });
-                        if (stored.length > 20) stored.splice(0, stored.length - 20);
-                        localStorage.setItem('dreamsAndPoems.errors', JSON.stringify(stored));
-                    } catch (e) {
-                        console.warn('Failed to store error:', e);
-                    }
-                },
-                
-                recover() {
-                    try {
-                        // Clear problematic state
-                        preloadedVideos.clear();
-                        isTransitioning = false;
-                        
-                        // Restart from random video
-                        setTimeout(() => {
-                            const randomIndex = Math.floor(Math.random() * videoUrls.length);
-                            playContent(randomIndex);
-                        }, 1000);
-                        
-                        return true;
-                    } catch (recoveryError) {
-                        console.error('Recovery failed:', recoveryError);
-                        return false;
-                    }
-                },
-                
-                showVisualError(error, context) {
-                    // Create visual error overlay
-                    const errorOverlay = document.createElement('div');
-                    errorOverlay.style.cssText = `
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: rgba(0, 0, 0, 0.9);
-                        color: white;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: center;
-                        z-index: 10000;
-                        font-family: monospace;
-                        padding: 2rem;
-                        text-align: center;
-                    `;
-                    
-                    errorOverlay.innerHTML = `
-                        <h2>🚨 Dreams and Poems - Error</h2>
-                        <p><strong>Error:</strong> ${error.message}</p>
-                        <p><strong>Context:</strong> ${JSON.stringify(context)}</p>
-                        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-                        <button onclick="location.reload()" style="
-                            background: #3b82f6;
-                            color: white;
-                            border: none;
-                            padding: 12px 24px;
-                            border-radius: 8px;
-                            cursor: pointer;
-                            margin-top: 1rem;
-                            font-size: 16px;
-                        ">Reload Page</button>
-                        <button onclick="this.parentElement.remove()" style="
-                            background: transparent;
-                            color: white;
-                            border: 2px solid white;
-                            padding: 10px 22px;
-                            border-radius: 8px;
-                            cursor: pointer;
-                            margin-top: 1rem;
-                            margin-left: 1rem;
-                            font-size: 16px;
-                        ">Close</button>
-                    `;
-                    
-                    document.body.appendChild(errorOverlay);
-                }
-            };
-
-            // Global error handlers
-            window.addEventListener('error', (event) => {
-                errorBoundary.handleError(event.error || new Error(event.message), {
-                    type: 'javascript',
-                    filename: event.filename,
-                    lineno: event.lineno
-                });
-            });
-
-            window.addEventListener('unhandledrejection', (event) => {
-                errorBoundary.handleError(event.reason, { type: 'promise_rejection' });
-            });
-
-            // DOM elements
-            const videoContainer = document.getElementById('video-container');
-            const videoA = document.getElementById('video-a');
-            const videoB = document.getElementById('video-b');
-            const uiOverlay = document.getElementById('ui-overlay');
-            const statusIndicator = document.getElementById('status-indicator');
-            const toggleSoundBtn = document.getElementById('toggle-sound-btn');
-            const fullscreenBtn = document.getElementById('fullscreen-btn');
-            const autoPlayCheckbox = document.getElementById('auto-play-checkbox');
-            const mobileAutoPlayCheckbox = document.getElementById('mobile-auto-play-checkbox');
-            const gestureFeedback = document.getElementById('gesture-feedback');
-            const gestureIcon = document.getElementById('gesture-icon');
-            const gestureText = document.getElementById('gesture-text');
-            const aboutLink = document.getElementById('about-link');
-
-            // Application state
-            let videoUrls = [];
-            let currentIndex = -1;
-            let isDesktop = window.matchMedia("(min-width: 769px)").matches;
-            let preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
-            let uiVisibilityTimeout;
-            let activeVideoElement = videoA;
-            let inactiveVideoElement = videoB;
-            let isTransitioning = false;
-            const preloadedVideos = new Map();
-            let needsTapToResume = false;
-            
-            // Add memory limits after isDesktop is defined
-            CONFIG.MAX_PRELOAD_MEMORY = isDesktop ? 150 * 1024 * 1024 : CONFIG.MOBILE_MEMORY_LIMIT;
-            
-            // Lightweight mobile-optimized video pool
-            const videoPool = {
-                pool: [],
-                maxSize: isDesktop ? 3 : 1, // Much smaller pool for mobile
-                
-                acquire() {
-                    if (this.pool.length > 0) {
-                        const video = this.pool.pop();
-                        return video;
-                    }
-                    return this.createElement();
-                },
-                
-                release(video) {
-                    if (!video) return;
-                    
-                    // On mobile, immediately dispose instead of pooling
-                    if (!isDesktop) {
-                        if (video.parentNode) {
-                            video.parentNode.removeChild(video);
-                        }
-                        return;
-                    }
-                    
-                    if (this.pool.length < this.maxSize) {
-                        video.pause();
-                        video.currentTime = 0;
-                        video.src = '';
-                        video.load();
-                        video.style.display = 'none';
-                        this.pool.push(video);
-                    } else {
-                        if (video.parentNode) {
-                            video.parentNode.removeChild(video);
-                        }
-                    }
-                },
-                
-                createElement() {
-                    const video = document.createElement('video');
-                    video.style.display = 'none';
-                    video.muted = true;
-                    video.playsInline = true;
-                    video.preload = isDesktop ? 'metadata' : 'none'; // No preload on mobile
-                    video.setAttribute('playsinline', '');
-                    
-                    // Minimal GPU acceleration for mobile
-                    if (isDesktop) {
-                        video.style.transform = 'translateZ(0)';
-                        video.style.backfaceVisibility = 'hidden';
-                    }
-                    
-                    return video;
-                },
-                
-                cleanup() {
-                    while (this.pool.length > 0) {
-                        const video = this.pool.pop();
-                        if (video.parentNode) {
-                            video.parentNode.removeChild(video);
-                        }
-                    }
-                }
-            };
-            
-            // Lightweight performance monitoring (mobile-optimized)
-            const performanceMonitor = {
-                memoryUsage: 0,
-                lastCleanup: Date.now(),
-                metrics: {
-                    memoryPressure: false
-                },
-                
-                checkMemory() {
-                    // Simplified memory check for mobile
-                    if (performance.memory && !isDesktop) {
-                        this.memoryUsage = performance.memory.usedJSHeapSize;
-                        this.metrics.memoryPressure = this.memoryUsage > CONFIG.MAX_PRELOAD_MEMORY;
-                        
-                        if (this.metrics.memoryPressure) {
-                            this.mobileCleanup();
-                        }
-                    } else if (isDesktop && performance.memory) {
-                        this.memoryUsage = performance.memory.usedJSHeapSize;
-                        this.metrics.memoryPressure = this.memoryUsage > CONFIG.MAX_PRELOAD_MEMORY;
-                        
-                        if (this.metrics.memoryPressure) {
-                            this.aggressiveCleanup();
-                        }
-                    }
-                },
-                
-                mobileCleanup() {
-                    // Aggressive mobile cleanup - clear everything except current
-                    const currentUrl = videoUrls[currentIndex % videoUrls.length];
-                    let cleanedCount = 0;
-                    
-                    for (const [url, video] of preloadedVideos.entries()) {
-                        if (url !== currentUrl) {
-                            preloadedVideos.delete(url);
-                            if (video.parentNode) {
-                                video.parentNode.removeChild(video);
-                            }
-                            cleanedCount++;
-                        }
-                    }
-                    
-                    console.log(`📱 Mobile cleanup: removed ${cleanedCount} videos`);
-                    this.lastCleanup = Date.now();
-                },
-                
-                aggressiveCleanup() {
-                    const currentUrl = videoUrls[currentIndex % videoUrls.length];
-                    let cleanedCount = 0;
-                    
-                    for (const [url, video] of preloadedVideos.entries()) {
-                        if (url !== currentUrl) {
-                            preloadedVideos.delete(url);
-                            videoPool.release(video);
-                            cleanedCount++;
-                        }
-                    }
-                    
-                    if (window.gc) {
-                        window.gc();
-                    }
-                    
-                    this.lastCleanup = Date.now();
-                },
-                
-                shouldPreload() {
-                    // On mobile, be very conservative
-                    if (!isDesktop) {
-                        return !this.metrics.memoryPressure && preloadedVideos.size === 0;
-                    }
-                    return !this.metrics.memoryPressure && preloadedVideos.size < preloadBufferSize;
-                },
-                
-                // Basic memory check for simplified monitoring
-                checkBasicMemory() {
-                    if (performance.memory) {
-                        this.memoryUsage = performance.memory.usedJSHeapSize;
-                        this.metrics.memoryPressure = this.memoryUsage > CONFIG.MAX_PRELOAD_MEMORY;
-                        
-                        if (this.metrics.memoryPressure) {
-                            if (isDesktop) {
-                                this.aggressiveCleanup();
-                            } else {
-                                this.mobileCleanup();
-                            }
-                        }
-                    }
-                }
-            };
-            
-            // Simplified network optimizer (desktop only)
-            const networkOptimizer = {
-                shouldPreloadVideo(url) {
-                    // On mobile, skip all network checking - keep it simple
-                    if (!isDesktop) return false;
-                    
-                    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                    if (!connection) return true;
-                    
-                    // Only check for data saver mode on desktop
-                    return !connection.saveData;
-                }
-            };
-
-            // Enhanced user preferences
-            const userPreferences = {
-                load() {
-                    try {
-                        const stored = localStorage.getItem('dreamsAndPoems.preferences');
-                        if (stored) {
-                            const prefs = JSON.parse(stored);
-                            // Desktop and mobile autoplay should always be on by default
-                            const autoplayEnabled = prefs.autoplay !== false;
-                            autoPlayCheckbox.checked = autoplayEnabled;
-                            if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = autoplayEnabled;
-                            
-                            // Sound should be off by default when autoplay is on
-                            const shouldMute = autoplayEnabled ? true : (prefs.muted !== false);
-                            videoA.muted = videoB.muted = shouldMute;
-                        } else {
-                            // Default settings: autoplay on, sound off
-                            autoPlayCheckbox.checked = true;
-                            if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
-                            videoA.muted = videoB.muted = true;
-                        }
-                    } catch (e) {
-                        console.warn('Failed to load preferences:', e);
-                        // Fallback to defaults
-                        autoPlayCheckbox.checked = true;
-                        if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
-                        videoA.muted = videoB.muted = true;
-                    }
-                },
-                
-                save() {
-                    try {
-                        const prefs = {
-                            muted: videoA.muted,
-                            autoplay: autoPlayCheckbox.checked,
-                            lastSaved: Date.now()
-                        };
-                        localStorage.setItem('dreamsAndPoems.preferences', JSON.stringify(prefs));
-                    } catch (e) {
-                        console.warn('Failed to save preferences:', e);
-                    }
-                }
-            };
-
-            // Enhanced icons with better accessibility
-            const ICONS = {
-                soundOn: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`,
-                soundOff: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`,
-                fullscreenEnter: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>`,
-                fullscreenExit: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3v4m0 0h4m-4 0l7-7M3 9v4m0 0h4m-4 0l7-7m11 5v4m0 0h-4m4 0l-7 7M3 15v-4m0 0h4m-4 0l7 7" /></svg>`,
-                autoplay: `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10c0-2.21-1.79-4-4-4s-4 1.79-4 4 1.79 4 4 4c1.48 0 2.77-.8 3.46-2" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 14c0 2.21 1.79 4 4 4s4-1.79 4-4-1.79-4-4-4c-1.48 0-2.77-.8-3.46 2" /></svg>`
-            };
-
-            // Utility functions
-            function shuffleArray(array) {
-                const shuffled = [...array];
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
-                return shuffled;
-            }
-
-            function showStatus(message, duration = 2000) {
-                if (statusIndicator) {
-                    statusIndicator.textContent = message;
-                    statusIndicator.style.opacity = '1';
-                    statusIndicator.setAttribute('aria-live', 'polite');
-                    
-                    setTimeout(() => {
-                        statusIndicator.style.opacity = '0';
-                    }, duration);
-                }
-                console.log('Status:', message);
-            }
-
-            // Enhanced accessibility announcements
-            function announceToScreenReader(message) {
-                const announcer = document.createElement('div');
-                announcer.setAttribute('aria-live', 'polite');
-                announcer.setAttribute('aria-atomic', 'true');
-                announcer.style.cssText = 'position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;';
-                announcer.textContent = message;
-                
-                document.body.appendChild(announcer);
-                setTimeout(() => document.body.removeChild(announcer), 1000);
-            }
-
-            // Enhanced video management
-            function playNextContent() {
-                if (isTransitioning) return;
-                currentIndex = (currentIndex + 1) % videoUrls.length;
-                playContent(currentIndex);
-            }
-
-            function playContent(index) {
-                if (videoUrls.length === 0 || isTransitioning) return;
-                
-                try {
-                    isTransitioning = true;
-                    currentIndex = index % videoUrls.length;
-                    const videoUrl = videoUrls[currentIndex];
-                    
-                    // Enhanced URL validation before attempting to load
-                    if (!videoUrl || typeof videoUrl !== 'string') {
-                        throw new Error(`Invalid video URL at index ${currentIndex}: ${videoUrl}`);
-                    }
-                    
-                    // Mobile-specific URL validation
-                    if (!isDesktop) {
-                        console.log(`📱 Mobile: Loading video ${currentIndex + 1}/${videoUrls.length}`);
-                        console.log(`📱 URL: ${videoUrl.split('/').pop()}`);
-                        
-                        // Validate URL format on mobile
-                        if (!videoUrl.startsWith('https://filedn.com/') || !videoUrl.endsWith('.mp4')) {
-                            throw new Error(`Malformed video URL on mobile: ${videoUrl}`);
-                        }
-                    }
-                    
-                    // Enhanced preloading check
-                    const preloadedVideo = preloadedVideos.get(videoUrl);
-                    if (preloadedVideo && preloadedVideo.readyState >= 2) {
-                        console.log('Using preloaded video:', videoUrl.split('/').pop());
-                        inactiveVideoElement.src = preloadedVideo.src;
-                        inactiveVideoElement.currentTime = 0;
-                        crossFade();
-                    } else {
-                        console.log('Loading new video:', videoUrl.split('/').pop());
-                        
-                        // Enhanced mobile error handling
-                        const videoLoadTimeout = setTimeout(() => {
-                            console.error('📱 Video load timeout on mobile');
-                            if (isTransitioning) {
-                                isTransitioning = false;
-                                playNextContent();
-                            }
-                        }, !isDesktop ? 15000 : 30000); // Shorter timeout for mobile
-                        
-                        const onCanPlay = () => {
-                            clearTimeout(videoLoadTimeout);
-                            inactiveVideoElement.removeEventListener('canplay', onCanPlay);
-                            inactiveVideoElement.removeEventListener('error', onVideoError);
-                            crossFade();
-                        };
-                        
-                        const onVideoError = (e) => {
-                            clearTimeout(videoLoadTimeout);
-                            inactiveVideoElement.removeEventListener('canplay', onCanPlay);
-                            inactiveVideoElement.removeEventListener('error', onVideoError);
-                            handleVideoError(e);
-                        };
-                        
-                        inactiveVideoElement.addEventListener('canplay', onCanPlay, { once: true });
-                        inactiveVideoElement.addEventListener('error', onVideoError, { once: true });
-                        
-                        // Enhanced mobile video loading
-                        if (!isDesktop) {
-                            // On mobile, ensure we clear any previous source first
-                            inactiveVideoElement.pause();
-                            inactiveVideoElement.src = '';
-                            inactiveVideoElement.load();
-                            
-                            // Small delay before setting new source on mobile
-                            setTimeout(() => {
-                                inactiveVideoElement.src = videoUrl;
-                                inactiveVideoElement.load();
-                            }, 100);
-                        } else {
-                            inactiveVideoElement.src = videoUrl;
-                            inactiveVideoElement.load();
-                        }
-                    }
-                } catch (error) {
-                    console.error('📱 playContent error:', error);
-                    errorBoundary.handleError(error, { context: 'playContent', index, videoUrl: videoUrls[index] });
-                    isTransitioning = false;
-                    
-                    // On mobile, try next video immediately
-                    if (!isDesktop) {
-                        setTimeout(() => {
-                            playNextContent();
-                        }, 1000);
-                    }
-                }
-            }
-
-            function crossFade() {
-                try {
-                    needsTapToResume = false;
-                    
-                    const playPromise = inactiveVideoElement.play();
-                    if (playPromise) {
-                        playPromise.catch(e => {
-                            console.log("Playback prevented. Needs user interaction:", e);
-                            needsTapToResume = true;
-                        });
-                    }
-                    
-                    // Use much faster crossfade on mobile
-                    const crossfadeDuration = isDesktop ? CONFIG.CROSSFADE_DURATION : CONFIG.CROSSFADE_DURATION_MOBILE;
-                    
-                    if (isDesktop) {
-                        // Enhanced RAF animation for desktop
-                        const startTime = performance.now();
-                        
-                        const animateCrossfade = (currentTime) => {
-                            const elapsed = currentTime - startTime;
-                            const progress = Math.min(elapsed / crossfadeDuration, 1);
-                            
-                            // Simple easing for better performance
-                            const easeProgress = progress * progress * (3 - 2 * progress);
-                            
-                            inactiveVideoElement.style.opacity = easeProgress;
-                            activeVideoElement.style.opacity = 1 - easeProgress;
-                            
-                            if (progress < 1) {
-                                requestAnimationFrame(animateCrossfade);
-                            } else {
-                                completeCrossfade();
-                            }
-                        };
-                        
-                        requestAnimationFrame(animateCrossfade);
-                    } else {
-                        // Enhanced mobile crossfade - fix audio sync issues
-                        console.log('📱 Starting mobile crossfade...');
-                        
-                        // Immediately pause the old video to prevent audio overlap
-                        if (activeVideoElement && !activeVideoElement.paused) {
-                            activeVideoElement.pause();
-                        }
-                        
-                        // Ensure new video is ready and playing
-                        if (inactiveVideoElement.readyState >= 2) {
-                            inactiveVideoElement.currentTime = 0;
-                            
-                            // Start the new video first
-                            const playPromise = inactiveVideoElement.play();
-                            if (playPromise) {
-                                playPromise.catch(e => console.log('Mobile play failed:', e));
-                            }
-                        }
-                        
-                        // Use immediate transition for mobile to avoid sync issues
-                        inactiveVideoElement.style.transition = 'none';
-                        activeVideoElement.style.transition = 'none';
-                        
-                        // Immediate swap for mobile - no fade to prevent audio issues
-                        inactiveVideoElement.style.opacity = '1';
-                        activeVideoElement.style.opacity = '0';
-                        
-                        // Complete crossfade immediately on mobile
-                        setTimeout(() => {
-                            completeCrossfade();
-                        }, 50); // Very short delay just to ensure DOM updates
-                    }
-                    
-                    function completeCrossfade() {
-                        console.log('📱 Completing crossfade...');
-                        
-                        // Swap elements
-                        [activeVideoElement, inactiveVideoElement] = [inactiveVideoElement, activeVideoElement];
-                        
-                        // Enhanced mobile cleanup - ensure old video is completely stopped
-                        if (inactiveVideoElement) {
-                            inactiveVideoElement.pause();
-                            inactiveVideoElement.currentTime = 0;
-                            
-                            // On mobile, also clear the src to free up memory
-                            if (!isDesktop) {
-                                setTimeout(() => {
-                                    if (inactiveVideoElement && inactiveVideoElement !== activeVideoElement) {
-                                        inactiveVideoElement.src = '';
-                                        inactiveVideoElement.load();
-                                    }
-                                }, 100);
-                            }
-                        }
-                        
-                        // Reset styles
-                        inactiveVideoElement.style.transition = '';
-                        activeVideoElement.style.transition = '';
-                        inactiveVideoElement.style.opacity = '0';
-                        activeVideoElement.style.opacity = '1';
-                        
-                        // Setup event listeners
-                        setupEventListeners(activeVideoElement);
-                        
-                        // Delayed preload update for mobile
-                        if (isDesktop) {
-                            updatePreloadQueue();
-                        } else {
-                            setTimeout(() => updatePreloadQueue(), CONFIG.MOBILE_PRELOAD_DELAY);
-                        }
-                        
-                        isTransitioning = false;
-                        announceToScreenReader(`Playing video ${currentIndex + 1} of ${videoUrls.length}`);
-                        
-                        console.log(`✅ Video ${currentIndex + 1} active, previous video cleaned up`);
-                    }
-                    
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'crossFade' });
-                    isTransitioning = false;
-                }
-            }
-
-            // Lightweight preloading (mobile-optimized)
-            function startPreloading(url) {
-                if (preloadedVideos.has(url)) return;
-                
-                // Skip preloading entirely on mobile to save resources
-                if (!isDesktop) {
-                    console.log('📱 Skipping preload on mobile for performance');
-                    return;
-                }
-                
-                // Check if URL was previously marked as failed
-                if (window.VIDEO_ERROR_HANDLER && window.VIDEO_ERROR_HANDLER.shouldSkipUrl(url)) {
-                    console.log('⚠️ Skipping preload for previously failed URL:', url.split('/').pop());
-                    return;
-                }
-                
-                // Check memory before preloading (desktop only)
-                performanceMonitor.checkMemory();
-                
-                if (!performanceMonitor.shouldPreload()) {
-                    console.log('Skipping preload due to memory pressure or buffer full');
-                    return;
-                }
-                
-                if (!networkOptimizer.shouldPreloadVideo(url)) {
-                    console.log('Skipping preload due to network conditions');
-                    return;
-                }
-                
-                try {
-                    const video = videoPool.acquire();
-                    document.body.appendChild(video);
-                    
-                    video.src = url;
-                    video.preload = 'metadata';
-                    
-                    const timeoutDuration = 10000; // Shorter timeout
-                    
-                    const loadPromise = new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => {
-                            reject(new Error('Preload timeout'));
-                        }, timeoutDuration);
-                        
-                        const onMetadataLoaded = () => {
-                            video.removeEventListener('loadedmetadata', onMetadataLoaded);
-                            clearTimeout(timeout);
-                            resolve(video);
-                        };
-                        
-                        const onError = (e) => {
-                            clearTimeout(timeout);
-                            video.removeEventListener('loadedmetadata', onMetadataLoaded);
-                            video.removeEventListener('error', onError);
-                            
-                            // Use enhanced error handler if available
-                            const error = e.error || new Error('Preload failed');
-                            if (window.VIDEO_ERROR_HANDLER) {
-                                window.VIDEO_ERROR_HANDLER.logError(url, error);
-                            }
-                            
-                            reject(error);
-                        };
-                        
-                        video.addEventListener('loadedmetadata', onMetadataLoaded, { once: true });
-                        video.addEventListener('error', onError, { once: true });
-                    });
-                    
-                    video.load();
-                    
-                    loadPromise.then(() => {
-                        if (!preloadedVideos.has(url)) {
-                            preloadedVideos.set(url, video);
-                            console.log('✅ Preloaded:', url.split('/').pop());
-                        }
-                    }).catch(error => {
-                        const videoName = url.split('/').pop();
-                        console.warn('⚠️ Preload failed:', videoName, error.message);
-                        
-                        // Log specific error types
-                        if (error.message.includes('404') || error.message.includes('not found')) {
-                            console.error(`❌ Video file missing: ${videoName}`);
-                        } else if (error.message.includes('timeout')) {
-                            console.warn(`⏱️ Preload timeout: ${videoName}`);
-                        }
-                        
-                        videoPool.release(video);
-                    });
-                    
-                } catch (error) {
-                    const videoName = url.split('/').pop();
-                    console.warn('⚠️ Preloading setup failed:', videoName, error.message);
-                    
-                    // Use enhanced error handler
-                    if (window.VIDEO_ERROR_HANDLER) {
-                        window.VIDEO_ERROR_HANDLER.logError(url, error);
-                    }
-                }
-            }
-
-            function updatePreloadQueue() {
-                try {
-                    // Enhanced mobile cleanup to prevent video conflicts
-                    if (!isDesktop) {
-                        console.log('📱 Mobile cleanup - preventing video conflicts...');
-                        const currentUrl = videoUrls[currentIndex % videoUrls.length];
-                        let cleanedCount = 0;
-                        
-                        // More aggressive mobile cleanup
-                        for (const [url, video] of preloadedVideos.entries()) {
-                            if (url !== currentUrl) {
-                                preloadedVideos.delete(url);
-                                
-                                // Ensure video is completely stopped
-                                if (video) {
-                                    video.pause();
-                                    video.currentTime = 0;
-                                    video.src = '';
-                                    video.load();
-                                    
-                                    if (video.parentNode) {
-                                        video.parentNode.removeChild(video);
-                                    }
-                                }
-                                cleanedCount++;
-                            }
-                        }
-                        
-                        // Also clean up any orphaned video elements on mobile
-                        const allVideos = document.querySelectorAll('video');
-                        allVideos.forEach(video => {
-                            if (video !== videoA && video !== videoB && video !== activeVideoElement && video !== inactiveVideoElement) {
-                                console.log('📱 Removing orphaned video element');
-                                video.pause();
-                                video.src = '';
-                                video.load();
-                                if (video.parentNode) {
-                                    video.parentNode.removeChild(video);
-                                }
-                            }
-                        });
-                        
-                        if (cleanedCount > 0) {
-                            console.log(`📱 Mobile cleanup: removed ${cleanedCount} videos`);
-                        }
-                        return;
-                    }
-                    
-                    const currentUrl = videoUrls[currentIndex % videoUrls.length];
-                    
-                    // Desktop logic - simplified
-                    performanceMonitor.checkMemory();
-                    
-                    // Clean up old preloaded videos
-                    for (const [url, video] of preloadedVideos.entries()) {
-                        const videoIndex = videoUrls.indexOf(url);
-                        const distance = (videoIndex - currentIndex + videoUrls.length) % videoUrls.length;
-                        
-                        if (distance > preloadBufferSize && url !== currentUrl) {
-                            preloadedVideos.delete(url);
-                            videoPool.release(video);
-                        }
-                    }
-                    
-                    // Preload upcoming videos (desktop only)
-                    if (performanceMonitor.shouldPreload() && networkOptimizer.shouldPreloadVideo(currentUrl)) {
-                        for (let i = 1; i <= preloadBufferSize; i++) {
-                            const nextIndex = (currentIndex + i) % videoUrls.length;
-                            const nextUrl = videoUrls[nextIndex];
-                            if (nextUrl !== currentUrl && !preloadedVideos.has(nextUrl)) {
-                                startPreloading(nextUrl);
-                                break; // Only preload one at a time
-                            }
-                        }
-                    }
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'updatePreloadQueue' });
-                }
-            }
-
-            function setupEventListeners(videoElement) {
-                if (!videoElement) return;
-                
-                // Remove existing listeners
-                videoElement.removeEventListener('ended', handleVideoEnd);
-                videoElement.removeEventListener('error', handleVideoError);
-                videoElement.removeEventListener('timeupdate', handleTimeUpdate);
-                
-                // Add new listeners
-                videoElement.addEventListener('ended', handleVideoEnd);
-                videoElement.addEventListener('error', handleVideoError);
-                videoElement.addEventListener('timeupdate', handleTimeUpdate);
-            }
-
-            function handleVideoEnd() {
-                if (autoPlayCheckbox.checked && !isTransitioning) {
-                    playNextContent();
-                }
-            }
-
-            function handleTimeUpdate() {
-                if (!autoPlayCheckbox.checked || isTransitioning || !activeVideoElement.duration) return;
-                
-                // Mobile-specific checks to prevent audio/video sync issues
-                if (!isDesktop) {
-                    // On mobile, ensure the video is actually playing and visible
-                    if (activeVideoElement.paused || activeVideoElement.currentTime === 0) {
-                        return; // Don't advance if video isn't properly playing
-                    }
-                    
-                    // Check if video seems stuck (same currentTime for too long)
-                    if (!handleTimeUpdate.lastTime) handleTimeUpdate.lastTime = 0;
-                    if (!handleTimeUpdate.stuckCount) handleTimeUpdate.stuckCount = 0;
-                    
-                    if (Math.abs(activeVideoElement.currentTime - handleTimeUpdate.lastTime) < 0.1) {
-                        handleTimeUpdate.stuckCount++;
-                        if (handleTimeUpdate.stuckCount > 10) { // Video seems stuck
-                            console.log('📱 Video appears stuck, forcing next video');
-                            handleTimeUpdate.stuckCount = 0;
-                            playNextContent();
-                            return;
-                        }
-                    } else {
-                        handleTimeUpdate.stuckCount = 0;
-                    }
-                    handleTimeUpdate.lastTime = activeVideoElement.currentTime;
-                }
-                
-                const timeRemaining = activeVideoElement.duration - activeVideoElement.currentTime;
-                if (timeRemaining < 3.2 && timeRemaining > 0) {
-                    playNextContent();
-                }
-            }
-
-            function handleVideoError(e) {
-                const error = e.error || e.target?.error || new Error('Video load failed');
-                const videoUrl = e.target?.src || activeVideoElement?.currentSrc || 'unknown';
-                const videoName = videoUrl.split('/').pop() || 'unknown';
-                
-                // Enhanced mobile-specific error detection
-                const readyState = e.target?.readyState || 0;
-                const networkState = e.target?.networkState || 0;
-                
-                // Enhanced error logging with HTTP status detection
-                let statusCode = null;
-                let errorMessage = error.message || 'Unknown video error';
-                
-                // Enhanced mobile URL validation - check for malformed URLs
-                if (!isDesktop && videoUrl && videoUrl !== 'unknown') {
-                    console.group('📱 Mobile Video Error Analysis');
-                    console.log(`Video URL: ${videoUrl}`);
-                    console.log(`Ready State: ${readyState}`);
-                    console.log(`Network State: ${networkState}`);
-                    
-                    // Check for malformed URL or partial URL issues
-                    if (videoUrl.includes('://escob.art/') && !videoUrl.includes('filedn.com')) {
-                        console.error('❌ Malformed URL detected - missing domain');
-                        errorMessage = `Malformed video URL: ${videoName}`;
-                        statusCode = 'URL_MALFORMED';
-                    } else if (readyState === 0 && networkState === 3) {
-                        console.error('❌ Network error - no data loaded');
-                        errorMessage = `Network error loading: ${videoName}`;
-                        statusCode = 'NETWORK_ERROR';
-                    }
-                    console.groupEnd();
-                }
-                
-                // Try to extract HTTP status from error
-                if (error.message && error.message.includes('404')) {
-                    statusCode = 404;
-                    errorMessage = `Video file not found: ${videoName}`;
-                } else if (error.message && error.message.includes('403')) {
-                    statusCode = 403;
-                    errorMessage = `Access denied to video: ${videoName}`;
-                } else if (error.code === 4) { // MEDIA_ELEMENT_ERROR: MEDIA_ERR_SRC_NOT_SUPPORTED
-                    statusCode = 404;
-                    errorMessage = `Video format not supported or file missing: ${videoName}`;
-                }
-                
-                // Use enhanced error handler if available
-                if (window.VIDEO_ERROR_HANDLER) {
-                    const isRealError = window.VIDEO_ERROR_HANDLER.logError(videoUrl, error, statusCode);
-                    
-                    // If it's just a 304 (not modified), don't treat as error
-                    if (!isRealError) {
-                        console.log('✅ 304 Not Modified - video is cached, continuing normally');
-                        return;
-                    }
-                }
-                
-                // Log detailed error information
-                console.group(`🚨 Video Error Details`);
-                console.log(`Video: ${videoName}`);
-                console.log(`URL: ${videoUrl}`);
-                console.log(`Error Code: ${error.code || 'N/A'}`);
-                console.log(`Error Message: ${errorMessage}`);
-                console.log(`Ready State: ${readyState}`);
-                console.log(`Network State: ${networkState}`);
-                if (statusCode) {
-                    console.log(`Status/Issue: ${statusCode}`);
-                }
-                
-                // Enhanced mobile diagnostics
-                if (!isDesktop) {
-                    console.log('📱 Mobile-specific diagnostics:');
-                    console.log(`Current Index: ${currentIndex}`);
-                    console.log(`Video URLs Length: ${videoUrls.length}`);
-                    console.log(`Active Element: ${activeVideoElement === videoA ? 'videoA' : 'videoB'}`);
-                    console.log(`Is Transitioning: ${isTransitioning}`);
-                    
-                    // Check for URL corruption on mobile
-                    if (videoUrl && videoUrl !== 'unknown') {
-                        const expectedUrl = videoUrls[currentIndex % videoUrls.length];
-                        if (expectedUrl && videoUrl !== expectedUrl) {
-                            console.error(`❌ URL mismatch detected!`);
-                            console.log(`Expected: ${expectedUrl}`);
-                            console.log(`Actual: ${videoUrl}`);
-                        }
-                    }
-                }
-                console.groupEnd();
-                
-                errorBoundary.handleError(error, { 
-                    context: 'videoError', 
-                    src: videoUrl,
-                    readyState: readyState,
-                    networkState: networkState,
-                    statusCode: statusCode,
-                    videoName: videoName,
-                    isMobile: !isDesktop,
-                    currentIndex: currentIndex
-                });
-                
-                // Enhanced mobile recovery
-                if (!isDesktop) {
-                    console.log('📱 Starting mobile error recovery...');
-                    
-                    // Immediately stop all video elements
-                    [videoA, videoB].forEach(video => {
-                        if (video) {
-                            video.pause();
-                            video.currentTime = 0;
-                        }
-                    });
-                    
-                    // Clear any problematic video sources
-                    if (e.target) {
-                        e.target.src = '';
-                        e.target.load();
-                    }
-                    
-                    // Reset transition state
-                    isTransitioning = false;
-                    
-                    // Force cleanup of preloaded videos on mobile
-                    preloadedVideos.clear();
-                    
-                    // Wait a bit longer before trying next video on mobile
-                    setTimeout(() => {
-                        if (!isTransitioning) {
-                            console.log('📱 Attempting next video after mobile error recovery');
-                            playNextContent();
-                        }
-                    }, 2000); // Longer delay for mobile
-                } else {
-                    // Try next video after delay
-                    setTimeout(() => {
-                        if (!isTransitioning) {
-                            playNextContent();
-                        }
-                    }, 1000);
-                }
-            }
-
-            function updateUI() {
-                try {
-                    const isMuted = videoA.muted;
-                    const soundIcon = isMuted ? ICONS.soundOff : ICONS.soundOn;
-                    
-                    // Update desktop sound button
-                    if (toggleSoundBtn) {
-                        toggleSoundBtn.innerHTML = soundIcon;
-                        toggleSoundBtn.setAttribute('aria-label', `${isMuted ? 'Unmute' : 'Mute'} sound (M)`);
-                    }
-                    
-                    // Update desktop fullscreen button (only on desktop)
-                    if (isDesktop && fullscreenBtn) {
-                        const isFullscreen = !!document.fullscreenElement;
-                        fullscreenBtn.innerHTML = isFullscreen ? ICONS.fullscreenExit : ICONS.fullscreenEnter;
-                        fullscreenBtn.setAttribute('aria-label', `${isFullscreen ? 'Exit' : 'Enter'} fullscreen (F)`);
-                    }
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'updateUI' });
-                }
-            }
-
-            // Enhanced UI visibility with debouncing
-            const handleUIVisibility = (() => {
-                let timeout;
-                return () => {
-                    if (uiOverlay) {
-                        uiOverlay.classList.add('ui-visible');
-                        // Also show mobile controls when UI is visible
-                        const mobileControls = document.querySelector('.mobile-controls');
-                        if (mobileControls) {
-                            mobileControls.classList.add('ui-visible');
-                        }
-                        
-                        clearTimeout(timeout);
-                        timeout = setTimeout(() => {
-                            uiOverlay.classList.remove('ui-visible');
-                            if (mobileControls) {
-                                mobileControls.classList.remove('ui-visible');
-                            }
-                        }, CONFIG.UI_TIMEOUT);
-                    }
-                };
-            })();
-
-            function setLooping() {
-                const shouldLoop = !autoPlayCheckbox.checked;
-                videoA.loop = shouldLoop;
-                videoB.loop = shouldLoop;
-                
-                // Sync mobile checkbox with desktop
-                if (mobileAutoPlayCheckbox) {
-                    mobileAutoPlayCheckbox.checked = autoPlayCheckbox.checked;
-                }
-            }
-
-            function toggleSound(showFeedback = false) {
-                try {
-                    const isMuted = !videoA.muted;
-                    videoA.muted = isMuted;
-                    videoB.muted = isMuted;
-
-                    if (!isMuted && activeVideoElement) {
-                        const playPromise = activeVideoElement.play();
-                        if (playPromise) {
-                            playPromise.catch(error => {
-                                console.log("Playback prevented. Needs user interaction.");
-                                needsTapToResume = true;
-                            });
-                        }
-                    }
-
-                    updateUI();
-                    userPreferences.save();
-                    
-                    if (showFeedback) {
-                        showGestureFeedback('sound', isMuted ? 'Off' : 'On');
-                    }
-                    
-                    announceToScreenReader(`Sound ${isMuted ? 'muted' : 'unmuted'}`);
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'toggleSound' });
-                }
-            }
-
-            function toggleAutoplay(showFeedback = false) {
-                try {
-                    autoPlayCheckbox.checked = !autoPlayCheckbox.checked;
-                    setLooping();
-                    userPreferences.save();
-                    
-                    if (showFeedback) {
-                        showGestureFeedback('autoplay', autoPlayCheckbox.checked ? 'On' : 'Off');
-                    }
-                    
-                    announceToScreenReader(`Autoplay ${autoPlayCheckbox.checked ? 'enabled' : 'disabled'}`);
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'toggleAutoplay' });
-                }
-            }
-
-            function showGestureFeedback(mode, status) {
-                if (!gestureFeedback || !gestureIcon || !gestureText) return;
-                
-                try {
-                    let iconHtml = '';
-                    if (mode === 'sound') {
-                        iconHtml = (videoA.muted ? ICONS.soundOff : ICONS.soundOn).replace('h-6 w-6', 'h-16 w-16');
-                    } else if (mode === 'mode') {
-                        // Show mode switch feedback
-                        iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                                   </svg>`;
-                    } else {
-                        iconHtml = ICONS.autoplay;
-                    }
-                    
-                    gestureIcon.innerHTML = iconHtml;
-                    gestureText.textContent = `${mode.charAt(0).toUpperCase() + mode.slice(1)} ${status}`;
-                    
-                    gestureFeedback.classList.add('visible');
-                    
-                    // Show longer on mobile for better visibility
-                    const feedbackDuration = isDesktop ? 1000 : 1500;
-                    
-                    setTimeout(() => {
-                        gestureFeedback.classList.remove('visible');
-                    }, feedbackDuration);
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'showGestureFeedback' });
-                }
-            }
-
-            function toggleFullscreen() {
-                try {
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen().catch(e => {
-                            console.warn('Fullscreen request failed:', e);
-                            announceToScreenReader('Fullscreen not available');
-                        });
-                    } else {
-                        document.exitFullscreen().catch(e => {
-                            console.warn('Exit fullscreen failed:', e);
-                        });
-                    }
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'toggleFullscreen' });
-                }
-            }
-
-            function openLinkedIn() {
-                try {
-                    const profileUrl = 'https://www.linkedin.com/in/carlos-escobar-32156b24/';
-                    const appUrl = 'linkedin://in/carlos-escobar-32156b24';
-
-                    if (!isDesktop) {
-                        window.location.href = appUrl;
-                        setTimeout(() => {
-                            window.open(profileUrl, '_blank', 'noopener,noreferrer');
-                        }, 2500);
-                    } else {
-                        window.open(profileUrl, '_blank', 'noopener,noreferrer');
-                    }
-                    
-                    announceToScreenReader('Opening LinkedIn profile');
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'openLinkedIn' });
-                }
-            }
-
-            // Enhanced initialization
-            function init() {
-                try {
-                    showStatus("Initializing Dreams and Poems...");
-                    console.log(`🎬 Starting Dreams and Poems v023... (${!isDesktop ? 'Mobile Lightweight' : 'Desktop Full-Featured'})`);
-                    
-                    // Load user preferences
-                    userPreferences.load();
-                    
-                    // Check if video URLs are loaded
-                    if (!CONFIG.videoUrls) {
-                        throw new Error('Video URLs not loaded. Please check video-urls.js file.');
-                    }
-                    
-                    // Enhanced device type detection
-                    const screenWidth = window.innerWidth;
-                    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                    isDesktop = window.matchMedia("(min-width: 769px)").matches && !isTouchDevice;
-                    
-                    // Force mobile detection for touch devices regardless of screen size
-                    if (isTouchDevice && screenWidth <= 1024) {
-                        isDesktop = false;
-                    }
-                    
-                    preloadBufferSize = isDesktop ? CONFIG.PRELOAD_BUFFER_SIZE_DESKTOP : CONFIG.PRELOAD_BUFFER_SIZE_MOBILE;
-                    
-                    console.log(`📱 Device detection: ${isDesktop ? 'Desktop' : 'Mobile'} (width: ${screenWidth}px, touch: ${isTouchDevice})`);
-                    
-                    // Select appropriate video URLs
-                    const sourceUrls = isDesktop ? CONFIG.videoUrls.desktop : CONFIG.videoUrls.mobile;
-                    if (!sourceUrls || sourceUrls.length === 0) {
-                        throw new Error(`No video URLs available for ${isDesktop ? 'desktop' : 'mobile'}`);
-                    }
-                    
-                    videoUrls = shuffleArray(sourceUrls);
-                    console.log(`✅ Loaded ${videoUrls.length} ${isDesktop ? 'desktop' : 'mobile'} videos from ${isDesktop ? 'desktop' : 'mobile'} list`);
-
-                    // Setup About link
-                    if (aboutLink) {
-                        aboutLink.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            openLinkedIn();
-                        });
-                    }
-
-                    // Device-specific initialization - lightweight mobile approach
-                    if (isDesktop) {
-                        initializeDesktop();
-                        console.log('🖥️ Desktop full-featured initialization complete');
-                    } else {
-                        initializeMobile();
-                        console.log('📱 Mobile lightweight initialization complete');
-                    }
-
-                    // Common event listeners
-                    if (autoPlayCheckbox) {
-                        autoPlayCheckbox.addEventListener('change', () => {
-                            setLooping();
-                            userPreferences.save();
-                        });
-                    }
-                    
-                    // Mobile autoplay checkbox sync
-                    if (mobileAutoPlayCheckbox) {
-                        mobileAutoPlayCheckbox.addEventListener('change', () => {
-                            autoPlayCheckbox.checked = mobileAutoPlayCheckbox.checked;
-                            setLooping();
-                            userPreferences.save();
-                            showGestureFeedback('autoplay', mobileAutoPlayCheckbox.checked ? 'On' : 'Off');
-                        });
-                    }
-
-                    // Window events
-                    window.addEventListener('resize', () => {
-                        const screenWidth = window.innerWidth;
-                        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                        let newIsDesktop = window.matchMedia("(min-width: 769px)").matches && !isTouchDevice;
-                        
-                        // Force mobile detection for touch devices
-                        if (isTouchDevice && screenWidth <= 1024) {
-                            newIsDesktop = false;
-                        }
-                        
-                        if (newIsDesktop !== isDesktop) {
-                            console.log(`📱 Device type changed: ${newIsDesktop ? 'Desktop' : 'Mobile'}`);
-                            isDesktop = newIsDesktop;
-                            // Reinitialize for new device type
-                            setTimeout(init, 100);
-                        }
-                    });
-
-                    // Page visibility handling
-                    document.addEventListener('visibilitychange', () => {
-                        if (document.hidden && activeVideoElement && !activeVideoElement.paused) {
-                            activeVideoElement.pause();
-                        } else if (!document.hidden && activeVideoElement && activeVideoElement.paused && !needsTapToResume) {
-                            activeVideoElement.play().catch(e => console.log('Resume failed:', e));
-                        }
-                    });
-
-                    // Start playing - ensure autoplay on, sound off by default
-                    currentIndex = Math.floor(Math.random() * videoUrls.length);
-                    
-                    // Ensure autoplay is on and sound is muted for better compatibility
-                    autoPlayCheckbox.checked = true;
-                    if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
-                    videoA.muted = videoB.muted = true;
-                    videoA.playsInline = true;
-                    videoB.playsInline = true;
-                    
-                    activeVideoElement.src = videoUrls[currentIndex];
-                    
-                    // Try multiple approaches to start playback
-                    const attemptAutoplay = async () => {
-                        try {
-                            await activeVideoElement.play();
-                            console.log('✅ Autoplay successful');
-                            setupEventListeners(activeVideoElement);
-                            updateUI();
-                            setLooping();
-                            handleUIVisibility();
-                            
-                            setTimeout(() => {
-                                updatePreloadQueue();
-                                
-                                // Simple performance monitoring for desktop only
-                                if (isDesktop) {
-                                    setInterval(() => {
-                                        performanceMonitor.checkMemory();
-                                    }, 15000); // Check every 15 seconds
-                                }
-                                
-                                // Basic cleanup for video pool periodically
-                                setInterval(() => {
-                                    if (performanceMonitor.metrics.memoryPressure) {
-                                        videoPool.cleanup();
-                                    }
-                                }, 60000); // Every minute
-                            }, 2000);
-                            
-                            announceToScreenReader('Dreams and Poems video player ready');
-                            
-                        } catch (error) {
-                            console.log('Autoplay blocked by browser, trying fallback...');
-                            
-                            // Try with lower volume first
-                            activeVideoElement.volume = 0.01;
-                            try {
-                                await activeVideoElement.play();
-                                console.log('✅ Autoplay successful with low volume');
-                                setupEventListeners(activeVideoElement);
-                                updateUI();
-                                setLooping();
-                                handleUIVisibility();
-                                
-                            } catch (secondError) {
-                                console.log('All autoplay attempts failed, requiring user interaction');
-                                needsTapToResume = true;
-                                
-                                // Add click listener to entire page for easier activation
-                                const activateOnInteraction = () => {
-                                    activeVideoElement.play().then(() => {
-                                        needsTapToResume = false;
-                                        setupEventListeners(activeVideoElement);
-                                        updateUI();
-                                        setLooping();
-                                        document.removeEventListener('click', activateOnInteraction);
-                                        document.removeEventListener('touchstart', activateOnInteraction);
-                                    }).catch(err => {
-                                        console.error('Manual activation failed:', err);
-                                    });
-                                };
-                                
-                                document.addEventListener('click', activateOnInteraction);
-                                document.addEventListener('touchstart', activateOnInteraction);
-                            }
-                        }
-                    };
-                    
-                    attemptAutoplay();
-
-                } catch (error) {
-                    errorBoundary.handleError(error, { context: 'initialization' });
-                    showStatus('Initialization failed. Retrying...', 3000);
-                    setTimeout(init, 2000);
-                }
-            }
-
-            function initializeDesktop() {
-                console.log('🖥️ Initializing desktop features...');
-                
-                // Desktop controls
-                if (toggleSoundBtn) {
-                    toggleSoundBtn.addEventListener('click', () => toggleSound());
-                }
-                
-                if (fullscreenBtn) {
-                    fullscreenBtn.addEventListener('click', toggleFullscreen);
-                    document.addEventListener('fullscreenchange', updateUI);
-                }
-                
-                // Mouse interactions
-                if (videoContainer) {
-                    videoContainer.addEventListener('mousemove', handleUIVisibility);
-                    videoContainer.addEventListener('mouseenter', handleUIVisibility);
-                    
-                    videoContainer.addEventListener('mousedown', () => {
-                        if (activeVideoElement) activeVideoElement.pause();
-                    });
-                    
-                    videoContainer.addEventListener('mouseup', () => {
-                        if (activeVideoElement) {
-                            activeVideoElement.play().catch(e => console.log('Resume failed:', e));
-                        }
-                    });
-                }
-                
-                // Keyboard controls
-                document.addEventListener('keydown', (e) => {
-                    if (e.target.tagName === 'INPUT') return;
-                    
-                    switch (e.code) {
-                        case 'KeyM':
-                            toggleSound();
-                            e.preventDefault();
-                            break;
-                        case 'KeyF':
-                            toggleFullscreen();
-                            e.preventDefault();
-                            break;
-                        case 'KeyA':
-                            toggleAutoplay();
-                            e.preventDefault();
-                            break;
-                        case 'Space':
-                            if (activeVideoElement) {
-                                if (activeVideoElement.paused) {
-                                    activeVideoElement.play();
-                                } else {
-                                    activeVideoElement.pause();
-                                }
-                            }
-                            e.preventDefault();
-                            break;
-                        case 'ArrowRight':
-                            playNextContent();
-                            e.preventDefault();
-                            break;
-                        case 'ArrowLeft':
-                            currentIndex = (currentIndex - 1 + videoUrls.length) % videoUrls.length;
-                            playContent(currentIndex);
-                            e.preventDefault();
-                            break;
-                    }
-                });
-            }
-
-            function initializeMobile() {
-                console.log('📱 Initializing lightweight mobile features...');
-                
-                // Ensure autoplay is on and sound is off by default
-                autoPlayCheckbox.checked = true;
-                if (mobileAutoPlayCheckbox) mobileAutoPlayCheckbox.checked = true;
-                videoA.muted = videoB.muted = true;
-                
-                // Mobile video state monitoring to prevent audio/video sync issues
-                let mobileVideoMonitor;
-                
-                function startMobileVideoMonitoring() {
-                    if (mobileVideoMonitor) clearInterval(mobileVideoMonitor);
-                    
-                    mobileVideoMonitor = setInterval(() => {
-                        if (!activeVideoElement || isTransitioning) return;
-                        
-                        // Check for ghost audio (audio playing but video stopped)
-                        if (!activeVideoElement.paused && activeVideoElement.currentTime > 0) {
-                            const videoElement = activeVideoElement;
-                            
-                            // Check if video element seems broken
-                            if (videoElement.readyState === 0 || videoElement.error) {
-                                console.log('📱 Video element broken, forcing next video');
-                                playNextContent();
-                                return;
-                            }
-                            
-                            // Check for audio without video progression
-                            if (!startMobileVideoMonitoring.lastTime) startMobileVideoMonitoring.lastTime = 0;
-                            if (Math.abs(videoElement.currentTime - startMobileVideoMonitoring.lastTime) < 0.05) {
-                                if (!startMobileVideoMonitoring.stuckCounter) startMobileVideoMonitoring.stuckCounter = 0;
-                                startMobileVideoMonitoring.stuckCounter++;
-                                
-                                if (startMobileVideoMonitoring.stuckCounter > 8) { // 4 seconds of being stuck
-                                    console.log('📱 Video stuck, forcing cleanup and next video');
-                                    videoElement.pause();
-                                    videoElement.currentTime = 0;
-                                    startMobileVideoMonitoring.stuckCounter = 0;
-                                    playNextContent();
-                                }
-                            } else {
-                                startMobileVideoMonitoring.stuckCounter = 0;
-                            }
-                            startMobileVideoMonitoring.lastTime = videoElement.currentTime;
-                        }
-                    }, 500); // Check every 500ms
-                }
-                
-                // Start monitoring after initialization
-                setTimeout(startMobileVideoMonitoring, 2000);
-                
-                // Simple, fast touch handling for mobile
-                if (videoContainer) {
-                    let lastTouchTime = 0;
-                    
-                    // Passive touch start for UI visibility only
-                    videoContainer.addEventListener('touchstart', (e) => {
-                        handleUIVisibility();
-                    }, { passive: true });
-                    
-                    // Simple touch end handler
-                    videoContainer.addEventListener('touchend', (e) => {
-                        const currentTime = performance.now();
-                        if (currentTime - lastTouchTime < CONFIG.TOUCH_DEBOUNCE) {
-                            return; // Ignore rapid touches
-                        }
-                        lastTouchTime = currentTime;
-                        
-                        // Simple touch handling - no complex zone detection
-                        const touch = e.changedTouches[0];
-                        const elementAtTouch = document.elementFromPoint(touch.clientX, touch.clientY);
-                        
-                        // Quick exclusion check
-                        const isControlElement = elementAtTouch?.closest('.mobile-toggle-switch') ||
-                                               elementAtTouch?.closest('.about-link') ||
-                                               elementAtTouch?.closest('.portfolio-link');
-                        
-                        // Handle tap-to-resume if needed
-                        if (needsTapToResume && !isControlElement) {
-                            if (activeVideoElement) {
-                                activeVideoElement.play().then(() => {
-                                    needsTapToResume = false;
-                                }).catch(err => {
-                                    console.error("Resume failed:", err);
-                                });
-                            }
-                            return;
-                        }
-                        
-                        // Simple sound toggle
-                        if (!isControlElement) {
-                            toggleSound(true);
-                        }
-                        
-                        handleUIVisibility();
-                    }, { passive: true });
-                    
-                    // Prevent context menu
-                    videoContainer.addEventListener('contextmenu', (e) => e.preventDefault());
-                }
-            }
-
-            // Start the application
-            init();
-            
-            // Make app available globally for debugging
-            window.dreamsAndPoemsApp = {
-                videoUrls,
-                currentIndex,
-                activeVideoElement,
-                preloadedVideos,
-                errorBoundary,
-                userPreferences,
-                toggleSound,
-                toggleAutoplay,
-                playNextContent,
-                playContent,
-                getStatus: () => ({
-                    currentIndex,
-                    totalVideos: videoUrls.length,
-                    isPlaying: activeVideoElement && !activeVideoElement.paused,
-                    muted: videoA.muted,
-                    autoplay: autoPlayCheckbox.checked,
-                    preloadedCount: preloadedVideos.size,
-                    errors: errorBoundary.errors.length,
-                    performance: {
-                        memoryUsage: performanceMonitor.memoryUsage,
-                        memoryPressure: performanceMonitor.metrics.memoryPressure,
-                        lastCleanup: performanceMonitor.lastCleanup
-                    },
-                    deviceType: isDesktop ? 'Desktop' : 'Mobile'
-                }),
-                
-                // Performance monitoring methods
-                getPerformanceReport: () => ({
-                    memory: performance.memory ? {
-                        used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
-                        total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB',
-                        limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + 'MB',
-                        pressure: performanceMonitor.metrics.memoryPressure
-                    } : 'Not available',
-                    preloaded: Array.from(preloadedVideos.keys()).map(url => url.split('/').pop()),
-                    bufferHealth: `${preloadedVideos.size}/${preloadBufferSize}`,
-                    videoPool: {
-                        available: videoPool.pool.length,
-                        maxSize: videoPool.maxSize
-                    },
-                    deviceType: isDesktop ? 'Desktop' : 'Mobile',
-                    errors: errorBoundary.errors.slice(-5) // Last 5 errors
-                }),
-                
-                // Enhanced cleanup for debugging
-                forceCleanup: () => {
-                    performanceMonitor.aggressiveCleanup();
-                    videoPool.cleanup();
-                    // Cancel any pending crossfade animations
-                    if (window.currentCrossfadeRAF) {
-                        cancelAnimationFrame(window.currentCrossfadeRAF);
-                        window.currentCrossfadeRAF = null;
-                    }
-                },
-                
-                // Simplified performance controls (mobile-compatible)
-                setQuality: (quality) => {
-                    if (['low', 'medium', 'high'].includes(quality) && isDesktop) {
-                        console.log(`🎛️ Quality setting: ${quality} (desktop only)`);
-                        // Quality control disabled on mobile for performance
-                    } else {
-                        console.log('🎛️ Quality control not available on mobile');
-                    }
-                },
-                
-                // Basic network info (simplified)
-                getNetworkInfo: () => {
-                    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                    return {
-                        type: connection?.effectiveType || 'unknown',
-                        saveData: connection?.saveData || false
-                    };
-                },
-                
-                // Get basic performance metrics (mobile-optimized)
-                getDetailedMetrics: () => ({
-                    ...window.dreamsAndPoemsApp.getPerformanceReport(),
-                    memoryUsage: performanceMonitor.memoryUsage,
-                    deviceType: isDesktop ? 'Desktop' : 'Mobile',
-                    optimizationLevel: isDesktop ? 'Full' : 'Lightweight'
-                })
-            };
-            
-            console.log('✅ Dreams and Poems v023 initialized successfully!');
-            
-            // Add debugging tools to global scope for troubleshooting 304/404 errors
-            window.debugTools = {
-                // Test video URL availability
-                async testVideoUrls(count = 5) {
-                    console.log('🔍 Testing video URL availability...');
-                    const urls = isDesktop ? videoUrls.slice(0, count) : videoUrls.slice(0, count);
-                    
-                    if (window.VIDEO_URL_VALIDATOR) {
-                        const results = await window.VIDEO_URL_VALIDATOR.testBatch(urls, 3, 500);
-                        
-                        console.group('📊 Video URL Test Results');
-                        results.forEach(result => {
-                            const videoName = result.url.split('/').pop();
-                            if (result.valid) {
-                                console.log(`✅ ${videoName} - Status: ${result.status}`);
-                            } else {
-                                console.error(`❌ ${videoName} - Status: ${result.status} - ${result.message}`);
-                            }
-                        });
-                        console.groupEnd();
-                        
-                        return results;
-                    } else {
-                        console.warn('Video URL validator not available');
-                    }
-                },
-                
-                // Get error summary
-                getErrorSummary() {
-                    if (window.VIDEO_ERROR_HANDLER) {
-                        const summary = window.VIDEO_ERROR_HANDLER.getSummary();
-                        console.group('📈 Video Error Summary');
-                        console.log(`Total Failed Videos: ${summary.totalFailed}`);
-                        console.log(`Total Retries: ${summary.totalRetries}`);
-                        if (summary.failedUrls.length > 0) {
-                            console.log('Failed URLs:', summary.failedUrls);
-                        }
-                        console.groupEnd();
-                        return summary;
-                    }
-                },
-                
-                // Reset error tracking
-                resetErrors() {
-                    if (window.VIDEO_ERROR_HANDLER) {
-                        window.VIDEO_ERROR_HANDLER.reset();
-                        console.log('🔄 Error tracking reset');
-                    }
-                },
-                
-                // Force test a specific video
-                async testSpecificVideo(videoIndex) {
-                    const url = videoUrls[videoIndex];
-                    if (!url) {
-                        console.error(`No video at index ${videoIndex}`);
-                        return;
-                    }
-                    
-                    console.log(`🔍 Testing video ${videoIndex}: ${url.split('/').pop()}`);
-                    if (window.VIDEO_URL_VALIDATOR) {
-                        const result = await window.VIDEO_URL_VALIDATOR.testUrl(url);
-                        console.log('Test result:', result);
-                        return result;
-                    }
-                }
-            };
-            
-            // Log helpful debugging instructions
-            console.group('🛠️ Debugging Tools Available');
-            console.log('Use these commands in the console to diagnose 304/404 errors:');
-            console.log('📍 debugTools.testVideoUrls(10) - Test first 10 video URLs');
-            console.log('📈 debugTools.getErrorSummary() - View error statistics');
-            console.log('🔄 debugTools.resetErrors() - Reset error tracking');
-            console.log('🎯 debugTools.testSpecificVideo(5) - Test specific video by index');
-            console.groupEnd();
-        });
-    </script>
+    <div id="loading">Loading...</div>
     
-    <!-- Service Worker for offline support -->
+    <div id="video-container">
+        <video id="video" autoplay muted loop playsinline></video>
+        
+        <div id="sound-notification">
+            <span class="icon">🔇</span>
+            <span class="text">Sound Off</span>
+        </div>
+        
+        <div id="device-info">
+            <div id="device-type"></div>
+            <div id="video-count"></div>
+            <div id="current-video"></div>
+            <div id="sound-status"></div>
+        </div>
+    </div>
+
+    <!-- Load video URLs -->
+    <script src="video-urls.js"></script>
+    
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch(registrationError => {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            });
+        console.log('Dreams and Poems - Simple Video Player Starting...');
+        
+        // Detect device type
+        function isMobile() {
+            return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
+
+        // Global variables
+        let currentVideoIndex = 0;
+        let videoList = [];
+        let isPlaying = false;
+        let video = document.getElementById('video');
+        let deviceInfo = document.getElementById('device-info');
+        let loading = document.getElementById('loading');
+        let soundNotification = document.getElementById('sound-notification');
+        let notificationTimeout;
+        let infoVisible = false;
+
+        // Update status
+        function updateStatus(message) {
+            console.log(message);
+        }
+
+        // Initialize the player
+        function init() {
+            try {
+                updateStatus('Checking video URLs...');
+                
+                // Check if VIDEO_URLS is available
+                if (!window.VIDEO_URLS) {
+                    updateStatus('ERROR: Video URLs not found');
+                    deviceInfo.innerHTML = '<div style="color: red;">Error: Video URLs not loaded</div>';
+                    loading.style.display = 'none';
+                    return;
+                }
+
+                // Determine device type and get appropriate video list
+                const mobile = isMobile();
+                videoList = mobile ? window.VIDEO_URLS.mobile : window.VIDEO_URLS.desktop;
+                
+                updateStatus(`Found ${videoList.length} videos for ${mobile ? 'mobile' : 'desktop'}`);
+                
+                if (videoList.length === 0) {
+                    updateStatus('ERROR: No videos available');
+                    deviceInfo.innerHTML = '<div style="color: red;">No videos available</div>';
+                    loading.style.display = 'none';
+                    return;
+                }
+                
+                // Shuffle the video list
+                shuffleArray(videoList);
+                
+                // Update device info
+                document.getElementById('device-type').textContent = `Device: ${mobile ? 'Mobile' : 'Desktop'}`;
+                document.getElementById('video-count').textContent = `Videos: ${videoList.length}`;
+                document.getElementById('sound-status').textContent = `Sound: ${video.muted ? 'Off' : 'On'}`;
+                
+                console.log(`Initialized for ${mobile ? 'mobile' : 'desktop'} with ${videoList.length} videos`);
+                console.log('Video list:', videoList.slice(0, 3)); // Show first 3 URLs
+                
+                // Load first video
+                loadVideo(0);
+                
+                // Show initial sound off notification
+                showSoundNotification();
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                updateStatus('ERROR: Initialization failed');
+                deviceInfo.innerHTML = '<div style="color: red;">Initialization failed</div>';
+                loading.style.display = 'none';
+            }
+        }
+
+        // Shuffle array function
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Load and play video
+        function loadVideo(index) {
+            try {
+                if (index >= videoList.length) index = 0;
+                currentVideoIndex = index;
+                
+                const videoUrl = videoList[index];
+                const fileName = videoUrl.split('/').pop().split('?')[0]; // Extract filename
+                updateStatus(`Loading video ${index + 1}/${videoList.length}...`);
+                console.log(`Loading video ${index + 1}/${videoList.length}: ${videoUrl}`);
+                
+                video.src = videoUrl;
+                video.load();
+                
+                video.onloadeddata = () => {
+                    console.log('Video loaded successfully');
+                    document.getElementById('current-video').textContent = `Now: ${fileName}`;
+                    loading.style.display = 'none';
+                    
+                    video.play().then(() => {
+                        isPlaying = true;
+                        console.log('Video playing');
+                    }).catch(error => {
+                        console.log('Autoplay prevented:', error);
+                        updateStatus('Tap to play');
+                    });
+                };
+                
+                video.onerror = (error) => {
+                    console.error('Video error:', error);
+                    updateStatus('Video error, trying next...');
+                    // Try next video
+                    setTimeout(() => nextVideo(), 1000);
+                };
+                
+                video.onended = () => {
+                    nextVideo();
+                };
+
+            } catch (error) {
+                console.error('Error loading video:', error);
+                updateStatus('Load error, trying next...');
+                setTimeout(() => nextVideo(), 1000);
+            }
+        }
+
+        // Play next video
+        function nextVideo() {
+            const nextIndex = (currentVideoIndex + 1) % videoList.length;
+            loadVideo(nextIndex);
+        }
+
+        // Toggle mute and show notification
+        function toggleMute() {
+            video.muted = !video.muted;
+            showSoundNotification();
+            console.log(`Audio ${video.muted ? 'muted' : 'unmuted'}`);
+        }
+
+        // Show sound notification with current state
+        function showSoundNotification() {
+            const icon = soundNotification.querySelector('.icon');
+            const text = soundNotification.querySelector('.text');
+            
+            if (video.muted) {
+                icon.textContent = '🔇';
+                text.textContent = 'Sound Off';
+            } else {
+                icon.textContent = '🔊';
+                text.textContent = 'Sound On';
+            }
+            
+            // Update sound status in device info
+            document.getElementById('sound-status').textContent = `Sound: ${video.muted ? 'Off' : 'On'}`;
+            
+            // Clear existing timeout
+            clearTimeout(notificationTimeout);
+            
+            // Show notification
+            soundNotification.classList.add('show');
+            
+            // Hide after 2 seconds
+            notificationTimeout = setTimeout(() => {
+                soundNotification.classList.remove('show');
+            }, 2000);
+        }
+
+        // Toggle device info visibility
+        function toggleDeviceInfo() {
+            infoVisible = !infoVisible;
+            if (infoVisible) {
+                deviceInfo.classList.add('show');
+            } else {
+                deviceInfo.classList.remove('show');
+            }
+            console.log(`Device info ${infoVisible ? 'shown' : 'hidden'}`);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case ' ':
+                case 'enter':
+                    e.preventDefault();
+                    if (video.paused) {
+                        video.play();
+                    } else {
+                        nextVideo();
+                    }
+                    break;
+                case 'm':
+                    toggleMute();
+                    break;
+                case 'i':
+                    toggleDeviceInfo();
+                    break;
+            }
+        });
+
+        // Click/touch anywhere on video to toggle sound
+        video.addEventListener('click', toggleMute);
+        video.addEventListener('touchstart', (e) => {
+            // Two-finger touch to toggle device info
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                toggleDeviceInfo();
+                return;
+            }
+            
+            // Single touch to toggle sound
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                toggleMute();
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM Content Loaded, initializing...');
+            init();
+        });
+        
+        // Fallback initialization
+        window.addEventListener('load', () => {
+            console.log('Window loaded');
+            if (videoList.length === 0) {
+                console.log('Fallback initialization...');
+                setTimeout(init, 500);
+            }
+        });
+
+        console.log('Dreams and Poems - Simple Video Player Script Loaded');
     </script>
-
 </body>
-
 </html>
