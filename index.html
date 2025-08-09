@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dreams and Poems</title>
+    <!-- Updated: 25:08:09:14:10:52 -->
     <link rel="icon" type="image/png" href="icon-192x192.png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <style>
@@ -107,6 +108,7 @@
 
         #sound-notification .text {
             color: #888;
+            text-align: center;
         }
 
         #loading {
@@ -238,6 +240,33 @@
         #video-container video {
             transition: opacity 0.5s ease;
         }
+
+        /* Mobile-only: Make all text 33% lighter */
+        @media screen and (max-width: 768px) {
+            #device-info {
+                color: #AFAFAF;
+            }
+            
+            #sound-notification {
+                color: #AFAFAF;
+            }
+            
+            #sound-notification .text {
+                color: #AFAFAF;
+            }
+            
+            #loading {
+                color: #AFAFAF;
+            }
+            
+            #next-button {
+                color: #AFAFAF;
+            }
+            
+            #human-analytica-button {
+                color: #AFAFAF;
+            }
+        }
     </style>
 </head>
 <body>
@@ -299,6 +328,9 @@
         let infoVisible = false;
         let isTransitioning = false;
         let hasShownLoadingOnce = false; // Track if loading screen has been shown once
+        let hasShownInitialInstructions = false; // Track if initial instructions have been shown
+        let soundToggleCount = 0; // Track number of sound toggles
+        let loadingToggleCount = 0; // Track number of loading toggles
         
         // LinkedIn profile URL
         const linkedInProfile = 'https://www.linkedin.com/in/carlos-escobar-32156b24/';
@@ -341,8 +373,8 @@
                 document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
                 
                 // Hard-coded timestamp - updated only when code is modified (NY Eastern Time)
-                // Auto-calculated: Unix 1754741610 → August 9, 2025 at 12:13:30 PM EDT
-                document.getElementById('last-modified').textContent = `Modified: 25:08:09:12:13:30`;
+                // Auto-calculated: Unix 1754763052 → August 9, 2025 at 2:10:52 PM EDT
+                document.getElementById('last-modified').textContent = `Modified: 25:08:09:14:10:52`;
                 
                 // Sync button widths - make Info button match Human Analytica width
                 syncButtonWidths();
@@ -353,8 +385,8 @@
                 // Load first video
                 loadVideo(0);
                 
-                // Show initial sound off notification
-                showSoundNotification();
+                // Show initial instructions for desktop, sound notification for mobile
+                showInitialNotification();
 
             } catch (error) {
                 console.error('Initialization error:', error);
@@ -364,25 +396,45 @@
         }
 
         // Load next video with smooth crossfade transition
-        function loadNextVideo(showUI = null) {
+        function loadNextVideo(showUI = true) {
             if (isTransitioning) return; // Prevent multiple transitions
             
-            // Determine if we should show UI (only on first time for double-click/two-finger)
-            const shouldShowUI = showUI !== null ? showUI : !hasShownLoadingOnce;
+            // For user-triggered actions (double-click/double-tap), always show some UI
+            const isUserTriggered = showUI === true;
             
             // Immediately hide sound notification
             soundNotification.classList.remove('show');
             
-            // Show loading screen and buttons only if this is the first time or explicitly requested
-            if (shouldShowUI) {
-                loading.classList.add('show');
+            // Handle user-triggered loading (double-tap/double-click)
+            if (isUserTriggered) {
+                // Increment loading toggle count
+                loadingToggleCount++;
+                console.log(`📺 Loading toggle count: ${loadingToggleCount}`);
+                
+                // Only show loading area and text for first toggle
+                if (loadingToggleCount <= 1) {
+                    loading.classList.add('show');
+                    console.log(`✅ Showing loading screen (toggle ${loadingToggleCount}/1)`);
+                } else {
+                    console.log(`❌ Loading screen hidden (toggle ${loadingToggleCount} > 1)`);
+                }
+                
+                // Always show bottom buttons when user triggers loading (double-tap/double-click)
                 nextButton.classList.add('show');
                 humanAnalyticaButton.classList.add('show');
                 hasShownLoadingOnce = true; // Mark that we've shown it once
+                
+                // Force hide loading and buttons after 3 seconds as backup
+                setTimeout(() => {
+                    loading.classList.remove('show');
+                    nextButton.classList.remove('show');
+                    humanAnalyticaButton.classList.remove('show');
+                    console.log('🔧 Backup timeout: Force hiding loading UI');
+                }, 3000);
             }
             
             const nextIndex = (currentVideoIndex + 1) % videoList.length;
-            console.log(`Loading next video: ${nextIndex + 1}/${videoList.length}${shouldShowUI ? ' (with UI)' : ' (silent)'}`);
+            console.log(`Loading next video: ${nextIndex + 1}/${videoList.length}${isUserTriggered ? ' (with UI)' : ' (silent)'}`);
             
             isTransitioning = true;
             
@@ -421,7 +473,7 @@
                         document.getElementById('current-video').textContent = `Now: ${fileName}`;
                         
                         // Hide loading screen and bottom buttons after transition (only if they were shown)
-                        if (shouldShowUI) {
+                        if (isUserTriggered) {
                             loading.classList.remove('show');
                             nextButton.classList.remove('show');
                             humanAnalyticaButton.classList.remove('show');
@@ -433,7 +485,7 @@
                     
                 }).catch(error => {
                     console.log('Error playing next video:', error);
-                    if (shouldShowUI) {
+                    if (isUserTriggered) {
                         loading.classList.remove('show');
                         nextButton.classList.remove('show');
                         humanAnalyticaButton.classList.remove('show');
@@ -444,13 +496,13 @@
             
             inactiveVideo.onerror = () => {
                 console.log('Error loading next video, trying another...');
-                if (shouldShowUI) {
+                if (isUserTriggered) {
                     loading.classList.remove('show');
                     nextButton.classList.remove('show');
                     humanAnalyticaButton.classList.remove('show');
                 }
                 isTransitioning = false;
-                setTimeout(() => loadNextVideo(shouldShowUI), 1000);
+                setTimeout(() => loadNextVideo(isUserTriggered), 1000);
             };
         }
 
@@ -500,7 +552,7 @@
                 };
                 
                 activeVideo.onended = () => {
-                    loadNextVideo(true); // Always show UI when video naturally ends
+                    loadNextVideo(false); // Don't show UI when video naturally ends
                 };
 
             } catch (error) {
@@ -589,10 +641,46 @@
             console.log(`Audio ${newMutedState ? 'muted' : 'unmuted'}`);
         }
 
+        // Show initial notification - instructions for desktop, sound status for mobile
+        function showInitialNotification() {
+            const text = soundNotification.querySelector('.text');
+            const mobile = isMobile();
+            
+            if (mobile) {
+                // Mobile: show tap instructions on first load
+                text.innerHTML = 'One Tap<br>Sound On<br><br>Two Taps<br>Next Dream';
+            } else {
+                // Desktop: show instructions on first load
+                text.innerHTML = 'One Click Sound On<br><br>Two Clicks Next Dream';
+            }
+            
+            // Update sound status in device info
+            document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
+            
+            // Clear existing timeout
+            clearTimeout(notificationTimeout);
+            
+            // Show sound notification and buttons
+            soundNotification.classList.add('show');
+            nextButton.classList.add('show');
+            humanAnalyticaButton.classList.add('show');
+            
+            // Hide after 3 seconds (longer for instructions)
+            const hideDelay = mobile ? 2000 : 3000;
+            notificationTimeout = setTimeout(() => {
+                soundNotification.classList.remove('show');
+                nextButton.classList.remove('show');
+                humanAnalyticaButton.classList.remove('show');
+                hasShownInitialInstructions = true; // Mark instructions as shown
+            }, hideDelay);
+        }
+
         // Show sound notification with current state
         function showSoundNotification() {
             const text = soundNotification.querySelector('.text');
+            const mobile = isMobile();
             
+            // After initial instructions, always show normal sound status
             if (activeVideo.muted) {
                 text.textContent = 'Sound Off';
             } else {
@@ -602,11 +690,28 @@
             // Update sound status in device info
             document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
             
-            // Clear existing timeout
+            // Clear existing timeout (including initial notification timeout)
             clearTimeout(notificationTimeout);
             
-            // Show sound notification and next button
-            soundNotification.classList.add('show');
+            // Mark initial instructions as shown when user interacts (fixes early click glitch)
+            if (!hasShownInitialInstructions) {
+                hasShownInitialInstructions = true;
+                console.log('🔧 Early interaction detected - marking initial instructions as shown');
+            }
+            
+            // Increment sound toggle count
+            soundToggleCount++;
+            console.log(`🔊 Sound toggle count: ${soundToggleCount}`);
+            
+            // Only show sound notification area and text for first 2 toggles
+            if (soundToggleCount <= 2) {
+                soundNotification.classList.add('show');
+                console.log(`✅ Showing sound notification (toggle ${soundToggleCount}/2)`);
+            } else {
+                console.log(`❌ Sound notification hidden (toggle ${soundToggleCount} > 2)`);
+            }
+            
+            // Always show bottom buttons regardless of toggle count
             nextButton.classList.add('show');
             humanAnalyticaButton.classList.add('show');
             
