@@ -269,12 +269,9 @@
                 document.getElementById('video-count').textContent = `Videos: ${videoList.length}`;
                 document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
                 
-                // Update timestamp with current time
-                const now = new Date();
-                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                                 now.getMinutes().toString().padStart(2, '0') + ':' + 
-                                 now.getSeconds().toString().padStart(2, '0');
-                document.getElementById('last-modified').textContent = `Modified: ${timeString}`;
+                // Hard-coded timestamp - updated only when code is modified (NY Eastern Time)
+                // Auto-calculated: August 9, 2025 at 10:31:09 AM EDT
+                document.getElementById('last-modified').textContent = `Modified: 25:08:10:31:09`;
                 
                 console.log(`Initialized for ${mobile ? 'mobile' : 'desktop'} with ${videoList.length} videos`);
                 console.log('Video list:', videoList.slice(0, 3)); // Show first 3 URLs
