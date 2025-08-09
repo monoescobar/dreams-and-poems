@@ -339,8 +339,8 @@
                 document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
                 
                 // Hard-coded timestamp - updated only when code is modified (NY Eastern Time)
-                // Auto-calculated: Unix 1754753631 → August 9, 2025 at 11:33:51 AM EDT
-                document.getElementById('last-modified').textContent = `Modified: 25:08:09:11:33:51`;
+                // Auto-calculated: Unix 1754741119 → August 9, 2025 at 12:05:19 PM EDT
+                document.getElementById('last-modified').textContent = `Modified: 25:08:09:12:05:19`;
                 
                 // Sync button widths - make Info button match Human Analytica width
                 syncButtonWidths();
@@ -664,6 +664,11 @@
             let clickCount = 0;
             let clickTimer = null;
             
+            // Mobile tap detection variables
+            let tapCount = 0;
+            let tapTimer = null;
+            let lastTapTime = 0;
+            
             // Gesture tracking variables for maximum finger count detection
             let gestureStartTime = 0;
             let maxFingers = 0;
@@ -764,16 +769,33 @@
                 
                 // Execute based on maximum finger count detected
                 if (maxFingers === 1) {
-                    console.log('✅ 1 FINGER → TOGGLE SOUND');
-                    toggleMute();
+                    // Single finger - handle tap detection for single/double tap
+                    const currentTime = Date.now();
+                    
+                    if (currentTime - lastTapTime < 400) {
+                        // Double tap detected
+                        clearTimeout(tapTimer);
+                        console.log('✅ DOUBLE TAP → NEXT VIDEO');
+                        loadNextVideo();
+                        tapCount = 0;
+                    } else {
+                        // Single tap - wait to see if there's a second tap
+                        tapCount = 1;
+                        tapTimer = setTimeout(() => {
+                            if (tapCount === 1) {
+                                console.log('✅ SINGLE TAP → TOGGLE SOUND');
+                                toggleMute();
+                            }
+                            tapCount = 0;
+                        }, 300);
+                    }
+                    
+                    lastTapTime = currentTime;
                 } else if (maxFingers === 2) {
-                    console.log('✅ 2 FINGERS → NEXT VIDEO');
-                    loadNextVideo();
-                } else if (maxFingers === 3) {
-                    console.log('🎯 3 FINGERS → SHOW INFO AREA!');
+                    console.log('✅ 2 FINGERS → SHOW INFO AREA');
                     toggleDeviceInfo();
-                } else if (maxFingers > 3) {
-                    console.log(`🎯 ${maxFingers} FINGERS → SHOW INFO AREA (multi-touch)`);
+                } else if (maxFingers >= 3) {
+                    console.log(`✅ ${maxFingers} FINGERS → SHOW INFO AREA (multi-touch)`);
                     toggleDeviceInfo();
                 } else {
                     console.log('❌ No valid gesture detected');
