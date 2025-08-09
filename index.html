@@ -24,13 +24,14 @@
             height: 100vh;
         }
 
-        video {
+        video, #video2 {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: opacity 0.8s ease-in-out;
         }
 
         #controls {
@@ -83,6 +84,37 @@
             min-width: 140px;
         }
 
+        /* Mobile-specific positioning for sound notification */
+        @media screen and (max-width: 768px) {
+            #sound-notification {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1000;
+            }
+            
+            /* Safari iOS specific - move slightly down to account for UI */
+            @supports (-webkit-touch-callout: none) and (not (top: constant(safe-area-inset-top))) {
+                #sound-notification {
+                    position: fixed;
+                    top: calc(50% + 30px);
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                }
+            }
+            
+            /* Safari iOS with safe area support - adjust for newer Safari */
+            @supports (-webkit-touch-callout: none) and (top: constant(safe-area-inset-top)) {
+                #sound-notification {
+                    position: fixed;
+                    top: calc(50% + 20px);
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                }
+            }
+        }
+
         #sound-notification.show {
             opacity: 1;
         }
@@ -92,13 +124,56 @@
         }
 
         #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        #next-button {
+            position: fixed;
+            bottom: env(safe-area-inset-bottom, 20px);
+            bottom: max(env(safe-area-inset-bottom), 20px);
+            right: env(safe-area-inset-right, 20px);
+            right: max(env(safe-area-inset-right), 20px);
             color: #888;
-            font-size: 18px;
-            z-index: 20;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+        }
+
+        /* Additional mobile browser compatibility */
+        @media screen and (max-width: 768px) {
+            #next-button {
+                bottom: max(env(safe-area-inset-bottom, 0px) + 20px, 20px);
+                right: max(env(safe-area-inset-right, 0px) + 20px, 20px);
+                z-index: 2147483647; /* Maximum z-index value */
+            }
+        }
+
+        #next-button.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #next-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #video-container video {
+            transition: opacity 0.5s ease;
         }
     </style>
 </head>
@@ -107,9 +182,14 @@
     
     <div id="video-container">
         <video id="video" autoplay muted loop playsinline></video>
+        <video id="video2" autoplay muted loop playsinline style="opacity: 0;"></video>
         
         <div id="sound-notification">
             <span class="text">Sound Off</span>
+        </div>
+
+        <div id="next-button">
+            <span class="text">Info</span>
         </div>
         
         <div id="device-info">
@@ -117,6 +197,7 @@
             <div id="video-count"></div>
             <div id="current-video"></div>
             <div id="sound-status"></div>
+            <div id="last-modified">Modified: 19:01:52</div>
         </div>
     </div>
 
@@ -136,12 +217,20 @@
         let videoList = [];
         let isPlaying = false;
         let video = document.getElementById('video');
+        let video2 = document.getElementById('video2');
+        let activeVideo = video;
+        let inactiveVideo = video2;
         let deviceInfo = document.getElementById('device-info');
         let loading = document.getElementById('loading');
         let soundNotification = document.getElementById('sound-notification');
+        let nextButton = document.getElementById('next-button');
         let notificationTimeout;
         let deviceInfoTimeout;
         let infoVisible = false;
+        let isTransitioning = false;
+        
+        // LinkedIn profile URL
+        const linkedInProfile = 'https://www.linkedin.com/in/carlos-escobar-32156b24/';
 
         // Update status
         function updateStatus(message) {
@@ -156,8 +245,7 @@
                 // Check if VIDEO_URLS is available
                 if (!window.VIDEO_URLS) {
                     updateStatus('ERROR: Video URLs not found');
-                    deviceInfo.innerHTML = '<div style="color: red;">Error: Video URLs not loaded</div>';
-                    loading.style.display = 'none';
+                    // No visible error message - just console log
                     return;
                 }
 
@@ -169,8 +257,7 @@
                 
                 if (videoList.length === 0) {
                     updateStatus('ERROR: No videos available');
-                    deviceInfo.innerHTML = '<div style="color: red;">No videos available</div>';
-                    loading.style.display = 'none';
+                    // No visible error message - just console log
                     return;
                 }
                 
@@ -180,7 +267,14 @@
                 // Update device info
                 document.getElementById('device-type').textContent = `Device: ${mobile ? 'Mobile' : 'Desktop'}`;
                 document.getElementById('video-count').textContent = `Videos: ${videoList.length}`;
-                document.getElementById('sound-status').textContent = `Sound: ${video.muted ? 'Off' : 'On'}`;
+                document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
+                
+                // Update timestamp with current time
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                 now.getMinutes().toString().padStart(2, '0') + ':' + 
+                                 now.getSeconds().toString().padStart(2, '0');
+                document.getElementById('last-modified').textContent = `Modified: ${timeString}`;
                 
                 console.log(`Initialized for ${mobile ? 'mobile' : 'desktop'} with ${videoList.length} videos`);
                 console.log('Video list:', videoList.slice(0, 3)); // Show first 3 URLs
@@ -194,9 +288,68 @@
             } catch (error) {
                 console.error('Initialization error:', error);
                 updateStatus('ERROR: Initialization failed');
-                deviceInfo.innerHTML = '<div style="color: red;">Initialization failed</div>';
-                loading.style.display = 'none';
+                // No visible error message - just console log
             }
+        }
+
+        // Load next video with smooth crossfade transition
+        function loadNextVideo() {
+            if (isTransitioning) return; // Prevent multiple transitions
+            
+            const nextIndex = (currentVideoIndex + 1) % videoList.length;
+            console.log(`Loading next video: ${nextIndex + 1}/${videoList.length}`);
+            
+            isTransitioning = true;
+            
+            // Load next video in inactive video element
+            const videoUrl = videoList[nextIndex];
+            const fileName = videoUrl.split('/').pop().split('?')[0];
+            
+            inactiveVideo.src = videoUrl;
+            inactiveVideo.muted = activeVideo.muted; // Match sound state
+            inactiveVideo.load();
+            
+            inactiveVideo.onloadeddata = () => {
+                console.log('Next video loaded, starting crossfade...');
+                
+                // Start playing the new video
+                inactiveVideo.play().then(() => {
+                    // Crossfade: fade out current, fade in next
+                    activeVideo.style.opacity = '0';
+                    inactiveVideo.style.opacity = '1';
+                    
+                    // After transition completes, swap video elements
+                    setTimeout(() => {
+                        // Stop the old video and hide it properly
+                        activeVideo.pause();
+                        activeVideo.style.opacity = '0';
+                        
+                        // Swap active/inactive videos
+                        [activeVideo, inactiveVideo] = [inactiveVideo, activeVideo];
+                        
+                        // Ensure the new active video is fully visible and inactive is hidden
+                        activeVideo.style.opacity = '1';
+                        inactiveVideo.style.opacity = '0';
+                        
+                        // Update tracking
+                        currentVideoIndex = nextIndex;
+                        document.getElementById('current-video').textContent = `Now: ${fileName}`;
+                        
+                        isTransitioning = false;
+                        console.log('Crossfade complete - active video opacity:', activeVideo.style.opacity, 'inactive video opacity:', inactiveVideo.style.opacity);
+                    }, 800); // Match CSS transition duration
+                    
+                }).catch(error => {
+                    console.log('Error playing next video:', error);
+                    isTransitioning = false;
+                });
+            };
+            
+            inactiveVideo.onerror = () => {
+                console.log('Error loading next video, trying another...');
+                isTransitioning = false;
+                setTimeout(() => loadNextVideo(), 1000);
+            };
         }
 
         // Shuffle array function
@@ -214,99 +367,311 @@
                 currentVideoIndex = index;
                 
                 const videoUrl = videoList[index];
-                const fileName = videoUrl.split('/').pop().split('?')[0]; // Extract filename
+                const fileName = videoUrl.split('/').pop().split('?')[0];
                 updateStatus(`Loading video ${index + 1}/${videoList.length}...`);
                 console.log(`Loading video ${index + 1}/${videoList.length}: ${videoUrl}`);
                 
-                video.src = videoUrl;
-                video.load();
+                activeVideo.src = videoUrl;
+                activeVideo.load();
                 
-                video.onloadeddata = () => {
+                activeVideo.onloadeddata = () => {
                     console.log('Video loaded successfully');
                     document.getElementById('current-video').textContent = `Now: ${fileName}`;
-                    loading.style.display = 'none';
+                    // Loading element is now hidden by default
                     
-                    video.play().then(() => {
+                    activeVideo.play().then(() => {
                         isPlaying = true;
                         console.log('Video playing');
                     }).catch(error => {
                         console.log('Autoplay prevented:', error);
-                        updateStatus('Tap to play');
+                        // No visible message - user will see video is paused
                     });
                 };
                 
-                video.onerror = (error) => {
+                activeVideo.onerror = (error) => {
                     console.error('Video error:', error);
-                    updateStatus('Video error, trying next...');
-                    // Try next video
-                    setTimeout(() => nextVideo(), 1000);
+                    // No visible error message - just try next video
+                    setTimeout(() => {
+                        const nextIndex = (currentVideoIndex + 1) % videoList.length;
+                        loadVideo(nextIndex);
+                    }, 1000);
                 };
                 
-                video.onended = () => {
-                    nextVideo();
+                activeVideo.onended = () => {
+                    loadNextVideo();
                 };
 
             } catch (error) {
                 console.error('Error loading video:', error);
-                updateStatus('Load error, trying next...');
-                setTimeout(() => nextVideo(), 1000);
+                // No visible error message - just try next video
+                setTimeout(() => {
+                    const nextIndex = (currentVideoIndex + 1) % videoList.length;
+                    loadVideo(nextIndex);
+                }, 1000);
             }
         }
 
-        // Play next video
-        function nextVideo() {
-            const nextIndex = (currentVideoIndex + 1) % videoList.length;
-            loadVideo(nextIndex);
+        // Open LinkedIn profile
+        function openLinkedIn() {
+            const mobile = isMobile();
+            
+            if (mobile) {
+                // Try to open LinkedIn app first, fallback to browser
+                const linkedInApp = 'linkedin://profile/carlos-escobar-32156b24';
+                const linkedInWeb = linkedInProfile;
+                
+                // Create a temporary link to test app opening
+                const tempLink = document.createElement('a');
+                tempLink.href = linkedInApp;
+                tempLink.style.display = 'none';
+                document.body.appendChild(tempLink);
+                
+                // Try to open the app
+                tempLink.click();
+                
+                // Fallback to web version after a short delay if app doesn't open
+                setTimeout(() => {
+                    window.open(linkedInWeb, '_blank');
+                    document.body.removeChild(tempLink);
+                }, 500);
+                
+                console.log('Attempting to open LinkedIn app, fallback to web');
+            } else {
+                // Desktop - open in new tab
+                window.open(linkedInProfile, '_blank');
+                console.log('Opening LinkedIn profile in new tab');
+            }
         }
 
         // Toggle mute and show notification
         function toggleMute() {
-            video.muted = !video.muted;
+            const newMutedState = !activeVideo.muted;
+            
+            // Apply to both videos
+            activeVideo.muted = newMutedState;
+            inactiveVideo.muted = newMutedState;
+            
+            // Force video reload on mobile if audio context is lost
+            if (!newMutedState && activeVideo.paused) {
+                activeVideo.load();
+                activeVideo.play().catch(error => {
+                    console.log('Audio context may be suspended, trying to resume...');
+                    // Try to resume audio context if available
+                    if (window.AudioContext || window.webkitAudioContext) {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (window.audioContext && window.audioContext.state === 'suspended') {
+                            window.audioContext.resume();
+                        }
+                    }
+                });
+            }
+            
             showSoundNotification();
-            console.log(`Audio ${video.muted ? 'muted' : 'unmuted'}`);
+            console.log(`Audio ${newMutedState ? 'muted' : 'unmuted'}`);
         }
 
         // Show sound notification with current state
         function showSoundNotification() {
             const text = soundNotification.querySelector('.text');
             
-            if (video.muted) {
+            if (activeVideo.muted) {
                 text.textContent = 'Sound Off';
             } else {
                 text.textContent = 'Sound On';
             }
             
             // Update sound status in device info
-            document.getElementById('sound-status').textContent = `Sound: ${video.muted ? 'Off' : 'On'}`;
+            document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
             
             // Clear existing timeout
             clearTimeout(notificationTimeout);
             
-            // Show notification
+            // Show sound notification and next button
             soundNotification.classList.add('show');
+            nextButton.classList.add('show');
             
             // Hide after 2 seconds
             notificationTimeout = setTimeout(() => {
                 soundNotification.classList.remove('show');
+                nextButton.classList.remove('show');
             }, 2000);
         }
 
-        // Toggle device info visibility
+        // Toggle device info visibility with enhanced debugging
         function toggleDeviceInfo() {
+            console.log('🔧 toggleDeviceInfo() CALLED');
+            console.log('📋 Device info element exists:', !!deviceInfo);
+            console.log('📋 Current classes:', deviceInfo.className);
+            console.log('📋 Current opacity:', window.getComputedStyle(deviceInfo).opacity);
+            
             // Clear any existing timeout
             clearTimeout(deviceInfoTimeout);
+            console.log('⏰ Cleared existing timeout');
             
             // Always show the info when toggled
             infoVisible = true;
             deviceInfo.classList.add('show');
+            console.log('✅ Added "show" class to device info');
+            console.log('📋 New classes after show:', deviceInfo.className);
             
-            // Hide after 2 seconds (same as sound notification)
+            // Force style recalculation
+            deviceInfo.offsetHeight; // Trigger reflow
+            console.log('🔄 Forced style recalculation');
+            
+            // Check computed style after change
+            setTimeout(() => {
+                const computedOpacity = window.getComputedStyle(deviceInfo).opacity;
+                console.log('📋 Computed opacity after show:', computedOpacity);
+                if (computedOpacity === '0') {
+                    console.log('⚠️ WARNING: Opacity is still 0 - CSS might not be applied');
+                } else {
+                    console.log('✅ SUCCESS: Device info should be visible');
+                }
+            }, 100);
+            
+            console.log('✅ DEVICE INFO SHOWN - 3-finger gesture detected successfully!');
+            
+            // Hide device info after 3 seconds
             deviceInfoTimeout = setTimeout(() => {
                 infoVisible = false;
                 deviceInfo.classList.remove('show');
-            }, 2000);
+                console.log('⏰ Device info auto-hidden after 3 seconds');
+            }, 3000);
+        }
+
+        // Attach event listeners to video container
+        function attachVideoEventListeners() {
+            let touchStartTime = 0;
+            let clickCount = 0;
+            let clickTimer = null;
             
-            console.log('Device info shown (will auto-hide in 2 seconds)');
+            // Gesture tracking variables for maximum finger count detection
+            let gestureStartTime = 0;
+            let maxFingers = 0;
+            let gestureTimer = null;
+            let gestureInProgress = false;
+            
+            const videoContainer = document.getElementById('video-container');
+            
+            // Handle mouse clicks (desktop)
+            videoContainer.addEventListener('click', (e) => {
+                // Don't trigger if clicking on info button
+                if (e.target.closest('#next-button')) return;
+                
+                clickCount++;
+                
+                if (clickCount === 1) {
+                    clickTimer = setTimeout(() => {
+                        // Single click - toggle mute
+                        console.log('Single click detected - toggle mute');
+                        toggleMute();
+                        clickCount = 0;
+                    }, 300); // 300ms delay to detect double click
+                } else if (clickCount === 2) {
+                    // Double click - load next video
+                    clearTimeout(clickTimer);
+                    console.log('Double click detected - load next video');
+                    loadNextVideo();
+                    clickCount = 0;
+                }
+            });
+            
+            // Maximum finger count detection system
+            videoContainer.addEventListener('touchstart', (e) => {
+                // Don't trigger if touching info button
+                if (e.target.closest('#next-button')) return;
+                e.preventDefault();
+                
+                const fingers = e.touches.length;
+                
+                // Start new gesture or update existing one
+                if (!gestureInProgress) {
+                    // Start new gesture
+                    gestureInProgress = true;
+                    gestureStartTime = Date.now();
+                    maxFingers = fingers;
+                    
+                    console.log(`🎯 NEW GESTURE STARTED: ${fingers} finger(s)`);
+                    
+                    // Set timer to execute gesture after 200ms window
+                    gestureTimer = setTimeout(() => {
+                        executeGesture();
+                    }, 200);
+                } else {
+                    // Update existing gesture
+                    if (fingers > maxFingers) {
+                        maxFingers = fingers;
+                        console.log(`� GESTURE UPDATED: max fingers now ${maxFingers}`);
+                    }
+                }
+                
+                console.log(`📍 Touch coordinates:`, Array.from(e.touches).map((t, i) => `F${i+1}:(${Math.round(t.clientX)}, ${Math.round(t.clientY)})`));
+            });
+            
+            // Track finger changes during gesture
+            videoContainer.addEventListener('touchmove', (e) => {
+                if (e.target.closest('#next-button')) return;
+                
+                const fingers = e.touches.length;
+                
+                // Update max fingers if we detect more during the gesture
+                if (gestureInProgress && fingers > maxFingers) {
+                    maxFingers = fingers;
+                    console.log(`🔄 GESTURE UPDATE: max fingers increased to ${maxFingers}`);
+                }
+            });
+            
+            // Handle gesture completion
+            videoContainer.addEventListener('touchend', (e) => {
+                if (e.target.closest('#next-button')) return;
+                
+                const remainingTouches = e.touches.length;
+                console.log(`👆 FINGER LIFTED: ${remainingTouches} finger(s) remaining`);
+                
+                // If all fingers lifted, complete gesture immediately
+                if (remainingTouches === 0 && gestureInProgress) {
+                    console.log('🏁 ALL FINGERS LIFTED - executing gesture immediately');
+                    clearTimeout(gestureTimer);
+                    executeGesture();
+                }
+            });
+            
+            // Execute the gesture based on maximum finger count detected
+            function executeGesture() {
+                if (!gestureInProgress) return;
+                
+                const duration = Date.now() - gestureStartTime;
+                console.log(`🎯 EXECUTING GESTURE: ${maxFingers} max fingers (${duration}ms duration)`);
+                
+                // Execute based on maximum finger count detected
+                if (maxFingers === 1) {
+                    console.log('✅ 1 FINGER → TOGGLE SOUND');
+                    toggleMute();
+                } else if (maxFingers === 2) {
+                    console.log('✅ 2 FINGERS → NEXT VIDEO');
+                    loadNextVideo();
+                } else if (maxFingers === 3) {
+                    console.log('🎯 3 FINGERS → SHOW INFO AREA!');
+                    toggleDeviceInfo();
+                } else if (maxFingers > 3) {
+                    console.log(`🎯 ${maxFingers} FINGERS → SHOW INFO AREA (multi-touch)`);
+                    toggleDeviceInfo();
+                } else {
+                    console.log('❌ No valid gesture detected');
+                }
+                
+                // Reset gesture tracking
+                gestureInProgress = false;
+                maxFingers = 0;
+                gestureStartTime = 0;
+            }
+            
+            // Just track when touch ends for logging - REMOVED, replaced by gesture system
+            
+            // Prevent context menu
+            videoContainer.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
         }
 
         // Keyboard controls
@@ -315,10 +680,10 @@
                 case ' ':
                 case 'enter':
                     e.preventDefault();
-                    if (video.paused) {
-                        video.play();
+                    if (activeVideo.paused) {
+                        activeVideo.play();
                     } else {
-                        nextVideo();
+                        loadNextVideo();
                     }
                     break;
                 case 'm':
@@ -327,23 +692,63 @@
                 case 'i':
                     toggleDeviceInfo();
                     break;
+                case 't':
+                    // Test function - press 't' to test device info display
+                    console.log('🧪 TEST: Manual device info toggle');
+                    toggleDeviceInfo();
+                    break;
             }
         });
 
         // Click/touch anywhere on video to toggle sound
-        video.addEventListener('click', toggleMute);
-        video.addEventListener('touchstart', (e) => {
-            // Two-finger touch to toggle device info
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                toggleDeviceInfo();
-                return;
+        attachVideoEventListeners();
+
+        // Handle page visibility changes (when returning from LinkedIn app)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && isMobile()) {
+                console.log('Page became visible again, checking audio state...');
+                // Small delay to ensure page is fully active
+                setTimeout(() => {
+                    if (!activeVideo.muted && (activeVideo.paused || activeVideo.currentTime === 0)) {
+                        console.log('Reloading video to restore audio context...');
+                        const currentIndex = currentVideoIndex;
+                        loadVideo(currentIndex);
+                    }
+                }, 500);
             }
-            
-            // Single touch to toggle sound
-            if (e.touches.length === 1) {
-                e.preventDefault();
-                toggleMute();
+        });
+
+        // Handle window focus events (additional fallback)
+        window.addEventListener('focus', () => {
+            if (isMobile() && !activeVideo.muted && activeVideo.paused) {
+                console.log('Window focused, attempting to resume video...');
+                activeVideo.play().catch(error => {
+                    console.log('Could not resume, reloading video...');
+                    loadVideo(currentVideoIndex);
+                });
+            }
+        });
+
+        // INFO button click handler (opens LinkedIn)
+        nextButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (nextButton.classList.contains('show')) {
+                openLinkedIn();
+            }
+        });
+
+        // Prevent touch events on INFO button from bubbling to video
+        nextButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        nextButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (nextButton.classList.contains('show')) {
+                openLinkedIn();
             }
         });
 
@@ -363,6 +768,19 @@
         });
 
         console.log('Dreams and Poems - Simple Video Player Script Loaded');
+        
+        // Global test function for debugging
+        window.testDeviceInfo = function() {
+            console.log('🧪 GLOBAL TEST: Testing device info display');
+            toggleDeviceInfo();
+        };
+        
+        window.testThreeFingers = function() {
+            console.log('🧪 SIMULATING 3-FINGER TOUCH');
+            console.log('📋 Device info element:', deviceInfo);
+            console.log('👀 Current classes:', deviceInfo.className);
+            toggleDeviceInfo();
+        };
     </script>
 </body>
 </html>
