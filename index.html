@@ -61,7 +61,7 @@
         }
 
         #sound-notification {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -84,7 +84,7 @@
             min-width: 140px;
         }
 
-        /* Mobile-specific positioning for sound notification */
+        /* Mobile-specific positioning for sound notification - same as loading */
         @media screen and (max-width: 768px) {
             #sound-notification {
                 position: fixed;
@@ -92,26 +92,10 @@
                 left: 50%;
                 transform: translate(-50%, -50%);
                 z-index: 1000;
-            }
-            
-            /* Safari iOS specific - move slightly down to account for UI */
-            @supports (-webkit-touch-callout: none) and (not (top: constant(safe-area-inset-top))) {
-                #sound-notification {
-                    position: fixed;
-                    top: calc(50% + 30px);
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                }
-            }
-            
-            /* Safari iOS with safe area support - adjust for newer Safari */
-            @supports (-webkit-touch-callout: none) and (top: constant(safe-area-inset-top)) {
-                #sound-notification {
-                    position: fixed;
-                    top: calc(50% + 20px);
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                }
+                min-width: 280px;
+                max-width: 320px;
+                width: 80vw;
+                padding: 25px 40px;
             }
         }
 
@@ -124,7 +108,41 @@
         }
 
         #loading {
-            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.15);
+            color: #888;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            min-width: 200px;
+        }
+
+        /* Mobile-specific loading screen - extend width */
+        @media screen and (max-width: 768px) {
+            #loading {
+                min-width: 280px;
+                max-width: 320px;
+                width: 80vw;
+                padding: 25px 40px;
+            }
+        }
+
+        #loading.show {
+            opacity: 1;
         }
 
         #next-button {
@@ -220,7 +238,9 @@
     </style>
 </head>
 <body>
-    <div id="loading">Loading...</div>
+    <div id="loading">
+        <span class="text">Loading Next Dream</span>
+    </div>
     
     <div id="video-container">
         <video id="video" autoplay muted loop playsinline></video>
@@ -317,8 +337,8 @@
                 document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
                 
                 // Hard-coded timestamp - updated only when code is modified (NY Eastern Time)
-                // Auto-calculated: Unix 1754750566 → August 9, 2025 at 10:42:46 AM EDT
-                document.getElementById('last-modified').textContent = `Modified: 25:08:10:42:46`;
+                // Auto-calculated: Unix 1754751809 → August 9, 2025 at 10:03:29 AM EDT
+                document.getElementById('last-modified').textContent = `Modified: 25:08:09:10:03:29`;
                 
                 console.log(`Initialized for ${mobile ? 'mobile' : 'desktop'} with ${videoList.length} videos`);
                 console.log('Video list:', videoList.slice(0, 3)); // Show first 3 URLs
@@ -339,6 +359,12 @@
         // Load next video with smooth crossfade transition
         function loadNextVideo() {
             if (isTransitioning) return; // Prevent multiple transitions
+            
+            // Immediately hide sound notification and show loading screen
+            soundNotification.classList.remove('show');
+            loading.classList.add('show');
+            nextButton.classList.add('show');
+            humanAnalyticaButton.classList.add('show');
             
             const nextIndex = (currentVideoIndex + 1) % videoList.length;
             console.log(`Loading next video: ${nextIndex + 1}/${videoList.length}`);
@@ -379,18 +405,29 @@
                         currentVideoIndex = nextIndex;
                         document.getElementById('current-video').textContent = `Now: ${fileName}`;
                         
+                        // Hide loading screen and bottom buttons after transition
+                        loading.classList.remove('show');
+                        nextButton.classList.remove('show');
+                        humanAnalyticaButton.classList.remove('show');
+                        
                         isTransitioning = false;
                         console.log('Crossfade complete - active video opacity:', activeVideo.style.opacity, 'inactive video opacity:', inactiveVideo.style.opacity);
                     }, 800); // Match CSS transition duration
                     
                 }).catch(error => {
                     console.log('Error playing next video:', error);
+                    loading.classList.remove('show');
+                    nextButton.classList.remove('show');
+                    humanAnalyticaButton.classList.remove('show');
                     isTransitioning = false;
                 });
             };
             
             inactiveVideo.onerror = () => {
                 console.log('Error loading next video, trying another...');
+                loading.classList.remove('show');
+                nextButton.classList.remove('show');
+                humanAnalyticaButton.classList.remove('show');
                 isTransitioning = false;
                 setTimeout(() => loadNextVideo(), 1000);
             };
@@ -493,6 +530,9 @@
 
         // Toggle mute and show notification
         function toggleMute() {
+            // Immediately hide loading and show sound notification
+            loading.classList.remove('show');
+            
             const newMutedState = !activeVideo.muted;
             
             // Apply to both videos
