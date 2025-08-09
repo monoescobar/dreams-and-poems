@@ -51,7 +51,6 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         #device-info.show {
@@ -74,20 +73,35 @@
             font-weight: 500;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 12px;
             z-index: 100;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             min-width: 140px;
+            justify-content: center;
         }
 
         #sound-notification.show {
             opacity: 1;
         }
 
+        #sound-notification .icon {
+            font-size: 24px;
+            position: relative;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            filter: grayscale(100%) brightness(0.6);
+        }
+
         #sound-notification .text {
+            width: 80px;
+            text-align: left;
             color: #888;
         }
 
@@ -109,6 +123,7 @@
         <video id="video" autoplay muted loop playsinline></video>
         
         <div id="sound-notification">
+            <span class="icon">🔇</span>
             <span class="text">Sound Off</span>
         </div>
         
@@ -140,7 +155,6 @@
         let loading = document.getElementById('loading');
         let soundNotification = document.getElementById('sound-notification');
         let notificationTimeout;
-        let deviceInfoTimeout;
         let infoVisible = false;
 
         // Update status
@@ -268,11 +282,16 @@
 
         // Show sound notification with current state
         function showSoundNotification() {
+            const icon = soundNotification.querySelector('.icon');
             const text = soundNotification.querySelector('.text');
             
             if (video.muted) {
+                // Sound off - muted icon
+                icon.textContent = '🔇';
                 text.textContent = 'Sound Off';
             } else {
+                // Sound on - with waves
+                icon.textContent = '🔊';
                 text.textContent = 'Sound On';
             }
             
@@ -293,20 +312,13 @@
 
         // Toggle device info visibility
         function toggleDeviceInfo() {
-            // Clear any existing timeout
-            clearTimeout(deviceInfoTimeout);
-            
-            // Always show the info when toggled
-            infoVisible = true;
-            deviceInfo.classList.add('show');
-            
-            // Hide after 2 seconds (same as sound notification)
-            deviceInfoTimeout = setTimeout(() => {
-                infoVisible = false;
+            infoVisible = !infoVisible;
+            if (infoVisible) {
+                deviceInfo.classList.add('show');
+            } else {
                 deviceInfo.classList.remove('show');
-            }, 2000);
-            
-            console.log('Device info shown (will auto-hide in 2 seconds)');
+            }
+            console.log(`Device info ${infoVisible ? 'shown' : 'hidden'}`);
         }
 
         // Keyboard controls
