@@ -167,9 +167,10 @@
             pointer-events: none;
             transition: opacity 0.3s ease;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            width: 60px;
             height: 60px;
             cursor: pointer;
+            white-space: nowrap;
+            /* Width will be set dynamically to match Human Analytica button */
         }
 
         #human-analytica-button {
@@ -295,6 +296,7 @@
         let deviceInfoTimeout;
         let infoVisible = false;
         let isTransitioning = false;
+        let hasShownLoadingOnce = false; // Track if loading screen has been shown once
         
         // LinkedIn profile URL
         const linkedInProfile = 'https://www.linkedin.com/in/carlos-escobar-32156b24/';
@@ -337,8 +339,11 @@
                 document.getElementById('sound-status').textContent = `Sound: ${activeVideo.muted ? 'Off' : 'On'}`;
                 
                 // Hard-coded timestamp - updated only when code is modified (NY Eastern Time)
-                // Auto-calculated: Unix 1754752763 → August 9, 2025 at 11:19:23 AM EDT
-                document.getElementById('last-modified').textContent = `Modified: 25:08:09:11:19:23`;
+                // Auto-calculated: Unix 1754753631 → August 9, 2025 at 11:33:51 AM EDT
+                document.getElementById('last-modified').textContent = `Modified: 25:08:09:11:33:51`;
+                
+                // Sync button widths - make Info button match Human Analytica width
+                syncButtonWidths();
                 
                 console.log(`Initialized for ${mobile ? 'mobile' : 'desktop'} with ${videoList.length} videos`);
                 console.log('Video list:', videoList.slice(0, 3)); // Show first 3 URLs
@@ -357,17 +362,25 @@
         }
 
         // Load next video with smooth crossfade transition
-        function loadNextVideo() {
+        function loadNextVideo(showUI = null) {
             if (isTransitioning) return; // Prevent multiple transitions
             
-            // Immediately hide sound notification and show loading screen
+            // Determine if we should show UI (only on first time for double-click/two-finger)
+            const shouldShowUI = showUI !== null ? showUI : !hasShownLoadingOnce;
+            
+            // Immediately hide sound notification
             soundNotification.classList.remove('show');
-            loading.classList.add('show');
-            nextButton.classList.add('show');
-            humanAnalyticaButton.classList.add('show');
+            
+            // Show loading screen and buttons only if this is the first time or explicitly requested
+            if (shouldShowUI) {
+                loading.classList.add('show');
+                nextButton.classList.add('show');
+                humanAnalyticaButton.classList.add('show');
+                hasShownLoadingOnce = true; // Mark that we've shown it once
+            }
             
             const nextIndex = (currentVideoIndex + 1) % videoList.length;
-            console.log(`Loading next video: ${nextIndex + 1}/${videoList.length}`);
+            console.log(`Loading next video: ${nextIndex + 1}/${videoList.length}${shouldShowUI ? ' (with UI)' : ' (silent)'}`);
             
             isTransitioning = true;
             
@@ -405,10 +418,12 @@
                         currentVideoIndex = nextIndex;
                         document.getElementById('current-video').textContent = `Now: ${fileName}`;
                         
-                        // Hide loading screen and bottom buttons after transition
-                        loading.classList.remove('show');
-                        nextButton.classList.remove('show');
-                        humanAnalyticaButton.classList.remove('show');
+                        // Hide loading screen and bottom buttons after transition (only if they were shown)
+                        if (shouldShowUI) {
+                            loading.classList.remove('show');
+                            nextButton.classList.remove('show');
+                            humanAnalyticaButton.classList.remove('show');
+                        }
                         
                         isTransitioning = false;
                         console.log('Crossfade complete - active video opacity:', activeVideo.style.opacity, 'inactive video opacity:', inactiveVideo.style.opacity);
@@ -416,20 +431,24 @@
                     
                 }).catch(error => {
                     console.log('Error playing next video:', error);
-                    loading.classList.remove('show');
-                    nextButton.classList.remove('show');
-                    humanAnalyticaButton.classList.remove('show');
+                    if (shouldShowUI) {
+                        loading.classList.remove('show');
+                        nextButton.classList.remove('show');
+                        humanAnalyticaButton.classList.remove('show');
+                    }
                     isTransitioning = false;
                 });
             };
             
             inactiveVideo.onerror = () => {
                 console.log('Error loading next video, trying another...');
-                loading.classList.remove('show');
-                nextButton.classList.remove('show');
-                humanAnalyticaButton.classList.remove('show');
+                if (shouldShowUI) {
+                    loading.classList.remove('show');
+                    nextButton.classList.remove('show');
+                    humanAnalyticaButton.classList.remove('show');
+                }
                 isTransitioning = false;
-                setTimeout(() => loadNextVideo(), 1000);
+                setTimeout(() => loadNextVideo(shouldShowUI), 1000);
             };
         }
 
@@ -479,7 +498,7 @@
                 };
                 
                 activeVideo.onended = () => {
-                    loadNextVideo();
+                    loadNextVideo(true); // Always show UI when video naturally ends
                 };
 
             } catch (error) {
@@ -490,6 +509,16 @@
                     loadVideo(nextIndex);
                 }, 1000);
             }
+        }
+
+        // Sync button widths - make Info button match Human Analytica width
+        function syncButtonWidths() {
+            // Wait for elements to be rendered
+            setTimeout(() => {
+                const humanAnalyticaWidth = humanAnalyticaButton.offsetWidth;
+                nextButton.style.width = humanAnalyticaWidth + 'px';
+                console.log(`✅ Synced button widths: Info button width set to ${humanAnalyticaWidth}px to match Human Analytica`);
+            }, 100);
         }
 
         // Open Human Analytica website
@@ -817,6 +846,11 @@
                     loadVideo(currentVideoIndex);
                 });
             }
+        });
+
+        // Handle window resize to re-sync button widths
+        window.addEventListener('resize', () => {
+            syncButtonWidths();
         });
 
         // Human Analytica button click handler (opens Human Analytica website)
